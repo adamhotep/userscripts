@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 // more info at https://stackoverflow.com/a/35853814/519360
-if (AJS) {
+if (typeof AJS === 'function') {
   AJS.toInit(function(){
     if (AJS.$("div.ia-fixed-sidebar").width() > 55){
       AJS.Confluence.Sidebar.toggle();
