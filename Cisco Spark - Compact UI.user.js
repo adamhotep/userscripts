@@ -21,7 +21,7 @@
   css.appendChild(document.createTextNode(/* syn=css */ `
 
 /* activities */
-#activities :not([class*="icon"])	{ font-size:inherit!important; }
+#activities :not([class*="icon"]):not([class*="avatar"])	{ font-size:inherit!important; }
 .activity-text p			{ margin:0; }
 #activities .activity-item		{ margin-top:0!important; padding-top:1ex; }
 #activities .activity-item:nth-child(2n):not(.system-message):not(:hover) { background:hsla(240,5%,96%,.3); }
