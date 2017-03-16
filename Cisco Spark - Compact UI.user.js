@@ -2,7 +2,7 @@
 // @name         Cisco Spark - Compact UI
 // @namespace    https://github.com/adamhotep/userscripts
 // @downloadURL  https://github.com/adamhotep/userscripts/raw/master/Cisco%20Spark%20-%20Compact%20UI.user.js
-// @version      0.2
+// @version      0.3
 // @description  A compact user interface for Cisco Spark
 // @author       Adam Katz
 // @match        https://web.ciscospark.com/rooms/*/chat
