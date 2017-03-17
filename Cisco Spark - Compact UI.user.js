@@ -41,7 +41,10 @@ body.roskilde #activities .activity-item.system-message { padding-top:0!importan
 
 /* conversation list */
 #conversation-list .roomListItem	{ padding:0.15em 0; }
-#conversation-list .avatar--group.badge:before	{ left:-1em; }
+#conversation-list .avatar--group.badge:before,
+#conversation-list .avatar.badge:before {
+  left:-1em;
+}
 #conversation-list div:not(.avatar)	{ font-size:80%; }
 #conversation-list .roomListItem-title	{ font-size:175%; }
 #conversation-list .roomListItem:nth-child(2n+1):not(:hover):not(.isActive) { background-color:#fbfbfb; }
