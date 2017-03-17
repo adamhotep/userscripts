@@ -46,6 +46,11 @@ body.roskilde #activities .activity-item.system-message { padding-top:0!importan
 #conversation-list .roomListItem-title	{ font-size:175%; }
 #conversation-list .roomListItem:nth-child(2n+1):not(:hover):not(.isActive) { background-color:#fbfbfb; }
 
+/* other fixes */
+.action-square-meta.action-square-meta--clickable { /* bigger clickable target */
+  width:100%; height:100%; margin:0; text-align:center;
+}
+
   `;
 
   var talos_css = /* syn=css */ `
@@ -268,6 +273,12 @@ h1,h2,h3, .roomListItem-title-text, .dial-out-title, .room-notification-title {
 }
 .dockedSearch .roomListItem-description span:first-child {
   color:#259; font-weight:bold;
+}
+
+::-webkit-scrollbar { width:6px; } /* about 2px vanish off right window frame */
+::-webkit-scrollbar-thumb {
+  background-color:rgba(255,255,255,.2)!important;
+  height:inherit;
 }
 
 /* Compact UI color update for talos_css */
