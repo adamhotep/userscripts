@@ -2,7 +2,7 @@
 // @name         Cisco Spark - Compact Talos UI
 // @namespace    https://github.com/adamhotep/userscripts
 // @downloadURL  https://github.com/adamhotep/userscripts/raw/master/Cisco%20Spark%20-%20Compact%20UI.user.js
-// @version      0.5
+// @version      0.6
 // @description  A compact user interface for Cisco Spark
 // @author       Adam Katz
 // @match        https://web.ciscospark.com/*
@@ -174,54 +174,65 @@ spark-mention {
 
 /* Hovering over messages */
 
-.activity-item:not(.system-message):hover, .roomListItem:hover, .listItem:hover,
-.listItem.isActive:hover .listItem-content .listItem-primaryText, .dialogue-modal, .modal {
+.onboarding-bg, .activity-item:not(.system-message):hover, .roomListItem:hover,
+.listItem:hover, .listItem.isActive:hover .listItem-content, .suggestions,
+.listItem-primaryText, .dialogue-modal, .modal {
     background-color: rgba(0,0,0,.5) !important;
 }
 
 
 /* Adam's updates to dark_and_blue */
+.generalBanner { background-color:rgba(241, 251, 255, 0.8); }
+.onboarding-bg { background-image:none; }
 body.roskilde #activities .activity-item .content .activity-text,
 body.roskilde #activities .activity-item .content .activity-text p { font-weight:bold!important; }
 #container .dial-out-container, .teamsSection, .teamDetails, .teamProfile,
-.settings #settings-menu ul li.active .label,
-.composer-section .preview-message, .activity-text code {
+.settings #settings-menu ul li.active .label, .react-mentions .suggestions ul,
+.react-mentions .suggestions ul li.focus, .composer-section .preview-message,
+.activity-text code, .activities-meeting-container {
   background-color:transparent;
 }
 #composer-section .file-input {
   background:inherit!important;
 }
-.teamDetails-header-nav, .activity-text pre, .iconButton, .listDivider--gray,
-.dialogue-modal-btn, .content-item-actions-section {
+.onboarding-modal, .teamDetails-header-nav, .activity-text pre,
+.iconButton, .listDivider--gray, .dialogue-modal-btn,
+.content-item-actions-section {
   background-color:rgba(255,255,255,.1)!important;
 }
 .popover-list-container, .btn {
   border-color:rgba(255,255,255,.4)!important;
 }
-.teamsSection, .icon:not(:hover) {
+.onboarding-form-instructions, .teamsSection, .icon:not(:hover),
+.chip--light .chip-text-secondary, .chip--light .chip-text-secondary * {
   color:inherit!important;
 }
+.iconButton--chat:hover .icon, .iconButton--chat .icon:hover, button:hover {
+  color:#09f!important; font-weight:bold; border-color:#09f;
+}
 .btn:hover, .icon:hover, .popover-list-icon:hover,
+button.button--primary:not(:disabled):not(.button--disabled):hover,
 .popover-list-icon::before:hover {
   color:#fff!important; border-color:#fff!important;
 }
 .teamDetails-header-nav, .notification-settings-subtext, .iconButton-label,
-.listItem.menuItem, .room-notification-title {
+.listItem.menuItem, .room-notification-title, .chip--light * {
   color:#eee;
   font-weight:bold!important;
 }
-#activities .activity-item.me .activity-text, .notification-settings-subtext,
-.listDivider--gray, .popover-list-icon, .popover-list-icon::before,
-.subheader div {
+.onboarding-modal, #activities .activity-item.me .activity-text,
+.notification-settings-subtext, .listDivider--gray, .popover-list-icon,
+.popover-list-icon::before, .subheader div {
   color:#aaa;
 }
 #activities .activity-item.me .activity-text {
   color:#888!important;
 }
+#activities .activity-item .content h3 { text-shadow:inherit; }
 #activity-items .activity-content-item-image-holder { background-color:inherit!important; }
-#activity-items .chip--dark { background-color:rgba(255,255,255,.1)!important; border-width:0!important; }
-#activity-items .chip-text--primary { color:inherit; }
-#activity-items .chip-icon { background-color:rgba(255,255,255,.1)!important; }
+.chip--dark, .chip--light { background-color:rgba(255,255,255,.1)!important; border-width:0!important; }
+.chip-text--primary { color:inherit; }
+.chip-icon { background-color:rgba(255,255,255,.1)!important; }
 img.avatar-img[src*="default_avatar"] {
   filter:contrast(90%) invert(100%) brightness(250%);
 }
@@ -243,7 +254,8 @@ option { background-color:#555!important; } /* can't be (semi)transparent in chr
 }
 .react-mentions .control .highlighter strong {
   background:transparent; outline:none;
-  font-weight:bolder; color:#f05f20; /* doesn't work so well */
+  font-weight:bold; color:#f05f20;
+  text-shadow:#100 0 0 1px; z-index:9; position:relative;
 }
 #activity-list [class*=" icon-cisco-"]:hover:before,
 #activity-list [class^=icon-cisco-]:hover:before {
@@ -261,7 +273,8 @@ body { margin:0!important; padding:0!important; }
   display:block; width:100%; height:100%; max-width:5436px; max-height:3058px;
   position:absolute; right:0; top:0; overflow:hidden; z-index:-1;
 }
-h1,h2,h3, .roomListItem-title-text, .dial-out-title, .room-notification-title {
+h1,h2,h3, .onboarding-form-instructions, .roomListItem-title-text,
+.dial-out-title, .room-notification-title {
   font-family:"Exo 2", CiscoSansTTThin, "Helvetica Neue", Arial, sans-serif!important;
 }
 .dockedSearch, .popover-list-container {
@@ -271,9 +284,6 @@ h1,h2,h3, .roomListItem-title-text, .dial-out-title, .room-notification-title {
 .roomListItem-description { color:inherit; }
 .dockedSearch .message:hover, .dial-out-title { font-weight:bold; color:#eee; }
 .column { color:#777; }
-.iconButton--chat:hover .icon, .iconButton--chat .icon:hover, button:hover {
-  color:#09f!important; font-weight:bold; border-color:#09f;
-}
 .dockedSearch .roomListItem-description span:first-child {
   color:#259; font-weight:bold;
 }
