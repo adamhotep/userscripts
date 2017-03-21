@@ -175,8 +175,8 @@ spark-mention {
 /* Hovering over messages */
 
 .onboarding-bg, .activity-item:not(.system-message):hover, .roomListItem:hover,
-.listItem:hover, .listItem.isActive:hover .listItem-content, .suggestions,
-.listItem-primaryText, .dialogue-modal, .modal {
+.listItem:hover, .suggestions,
+.dialogue-modal, .modal {
     background-color: rgba(0,0,0,.5) !important;
 }
 
@@ -189,7 +189,10 @@ body.roskilde #activities .activity-item .content .activity-text p { font-weight
 #container .dial-out-container, .teamsSection, .teamDetails, .teamProfile,
 .settings #settings-menu ul li.active .label, .react-mentions .suggestions ul,
 .react-mentions .suggestions ul li.focus, .composer-section .preview-message,
-.activity-text code, .activities-meeting-container {
+.activity-text code, .activities-meeting-container,
+.navigation-bar .listItem.isActive:hover, .navigation-bar
+  .listItem.isActive:hover .listItem-content .listItem-primaryText,
+.navigation-bar .listItem:hover, .listItem.isActive:hover .listItem-content {
   background-color:transparent;
 }
 #composer-section .file-input {
@@ -216,7 +219,8 @@ button.button--primary:not(:disabled):not(.button--disabled):hover,
   color:#fff!important; border-color:#fff!important;
 }
 .teamDetails-header-nav, .notification-settings-subtext, .iconButton-label,
-.listItem.menuItem, .room-notification-title, .chip--light * {
+code[class*="language-"], pre[class*="language-"].listItem.menuItem,
+.room-notification-title, .chip--light * {
   color:#eee;
   font-weight:bold!important;
 }
@@ -279,7 +283,11 @@ h1,h2,h3, .onboarding-form-instructions, .roomListItem-title-text,
 }
 .dockedSearch, .popover-list-container {
   background:rgba(0,0,0,.85) !important;
-  text-shadow:0 0 1em #000; }
+}
+.dockedSearch, .popover-list-container, code[class*="language-"],
+pre[class*="language-"] {
+  text-shadow:0 0 1em #000;
+}
 .dockedSearch ul li p { color:inherit; }
 .roomListItem-description { color:inherit; }
 .dockedSearch .message:hover, .dial-out-title { font-weight:bold; color:#eee; }
