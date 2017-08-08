@@ -1,14 +1,13 @@
 // ==UserScript==
-// @name        Confluence - Hide sidebar
+// @name        Github - linkify commented web URLs
 // @namespace   https://github.com/adamhotep/userscripts
-// @description Collapse the sidebar upon page load
-// @include     https://confluence.*
-// @include     http://confluence.*
+// @include     https://gist.github.com/*
+// @include     https://github.com/*
 // @grant       none
 // @author      Adam Katz
 // @version     1
 // @copyright   2016+ by Adam Katz
-// @license     GPL
+// @license     GPL v3
 // @licstart    The following is the entire license notice for this script.
 /* 
  * Copyright (C) 2016  Adam Katz
@@ -25,11 +24,11 @@
 // @licend      The above is the entire license notice for this script.
 // ==/UserScript==
 
-// more info at https://stackoverflow.com/a/35853814/519360
-if (typeof AJS === 'function') {
-  AJS.toInit(function(){
-    if (AJS.$("div.ia-fixed-sidebar").width() > 55){
-      AJS.Confluence.Sidebar.toggle();
-    }
-  });
+// This ignores .pl-s (strings) because it may be **constructing** a URL
+var plc = document.querySelectorAll(".pl-c");
+for (var c = 0, cl = plc.length; c < cl; c++) {
+  plc[c].innerHTML = plc[c].innerHTML
+    // avoids ampersands (escaped ampersands are okay) and trailing punctuation
+    .replace(/\b(https?:\/\/(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
+             '<a href="$1">$1</a>');
 }
