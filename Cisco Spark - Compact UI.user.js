@@ -2,7 +2,7 @@
 // @name         Cisco Spark - Compact Talos UI
 // @namespace    https://github.com/adamhotep/userscripts
 // @downloadURL  https://github.com/adamhotep/userscripts/raw/master/Cisco%20Spark%20-%20Compact%20UI.user.js
-// @version      0.6
+// @version      1.0
 // @description  A compact user interface for Cisco Spark
 // @author       Adam Katz
 // @match        https://web.ciscospark.com/*
@@ -50,6 +50,12 @@ body.roskilde #activities .activity-item.system-message { padding-top:0!importan
 #conversation-list .roomListItem:nth-child(2n+1):not(:hover):not(.isActive) { background-color:#fbfbfb; }
 
 /* other fixes */
+.peopleList .personListItem.listItem { min-height:1em; }
+.personListItem { box-shadow:none; }
+.listItem { padding:0; }
+li + li + li > .personListItem { margin:-0.33em 0; }
+.peopleList .listItemWrapper:nth-child(2n+1):not(:hover) { background-color:#fbfbfb; }
+.listItemWrapper: { min-height: 1.5em; }
 .action-square-meta.action-square-meta--clickable { /* bigger clickable target */
   width:100%; height:100%; margin:0; text-align:center;
 }
@@ -63,8 +69,8 @@ body.roskilde #activities .activity-item.system-message { padding-top:0!importan
 
 html, body, .activity-title, #activities, #convos, .navigation-bar,
 .composer-wrapper, .convo-filter-menu-list-header, #conversation,
-.room-actions-menu-icon, .iconButton {
-    color: #bbb !important; background:rgba(0,0,0,.08) !important;
+.room-actions-menu-icon, .iconButton, .activity-menu-section {
+    color: #bbb !important; background:rgba(0,0,0,.08) !important; border:none !important;
 }
 
 /* Conversation Menu */
@@ -117,7 +123,8 @@ html, body, .activity-title, #activities, #convos, .navigation-bar,
     color: #09f;
     font-weight: bold;
 }
-.roomListItem.isUnread .roomListItem-description {
+.roomListItem.isUnread .roomListItem-description,
+.activity-titlebar-presence-status {
     color: #aaa; font-weight: bold;
 }
 /* team names */
@@ -156,6 +163,7 @@ body.roskilde #activities .activity-item .content .activity-text {
 /* text as you enter it */
 #message-composer {
     color: #c92c39; font-size: 16px !important;
+    margin-top: 4px;
 }
 /*
 #message-composer element.style {
@@ -182,26 +190,48 @@ spark-mention {
 
 
 /* Adam's updates to dark_and_blue */
-.generalBanner { background-color:rgba(241, 251, 255, 0.8); }
+.generalBanner { background-color:rgba(241, 251, 255, 0.8); color:#000; }
 .onboarding-bg { background-image:none; }
 body.roskilde #activities .activity-item .content .activity-text,
 body.roskilde #activities .activity-item .content .activity-text p { font-weight:bold!important; }
 #container .dial-out-container, .teamsSection, .teamDetails, .teamProfile,
 .settings #settings-menu ul li.active .label, .react-mentions .suggestions ul,
 .react-mentions .suggestions ul li.focus, .composer-section .preview-message,
-.activity-text code, .activities-meeting-container,
-.navigation-bar .listItem.isActive:hover, .navigation-bar
-  .listItem.isActive:hover .listItem-content .listItem-primaryText,
-.navigation-bar .listItem:hover, .listItem.isActive:hover .listItem-content {
+.activity-text code, .activities-meeting-container, .activity-people-section,
+.listItem.isActive:hover .listItem-content .listItem-primaryText,
+.navigation-bar .listItem.isActive:hover, .navigation-bar, .navigation-bar .listItem:hover,
+.listItem.isActive:hover .listItem-content, #convos, .menu {
   background-color:transparent;
+  border:none;
 }
-#composer-section .file-input {
+#composer-section .file-input, .peopleSearch .results {
   background:inherit!important;
 }
 .onboarding-modal, .teamDetails-header-nav, .activity-text pre,
 .iconButton, .listDivider--gray, .dialogue-modal-btn,
-.content-item-actions-section {
+.content-item-actions-section, .dialog-modal-header-text,
+:not(pre)>code[class*=language-], pre[class*=language-] {
   background-color:rgba(255,255,255,.1)!important;
+}
+:not(pre)>code[class*=language-], pre[class*=language-] {
+  max-height:40vh;
+}
+#activities .activity-item .options, .more-options {
+  color:#000; /* this will be inverted to #fff */
+  font-weight:bold;
+  filter:invert(100%);
+}
+.activity-title .alert-external-participants {
+  color:#444;
+  font-weight:bold;
+}
+.avatar.avatar--group.avatar--spaced img.avatar-img[src],
+.avatar.avatar--group.avatar--spaced[style^="background-color:#ffffff"],
+.dialogue-modal-header-text {
+  background-color:#333!important;
+}
+.avatar.avatar--group[style*="background-color:"] {
+  background-color:transparent!important;
 }
 .popover-list-container, .btn {
   border-color:rgba(255,255,255,.4)!important;
@@ -210,23 +240,26 @@ body.roskilde #activities .activity-item .content .activity-text p { font-weight
 .chip--light .chip-text-secondary, .chip--light .chip-text-secondary * {
   color:inherit!important;
 }
+.icon { background-color:transparent!important; }
 .iconButton--chat:hover .icon, .iconButton--chat .icon:hover, button:hover {
   color:#09f!important; font-weight:bold; border-color:#09f;
 }
-.btn:hover, .icon:hover, .popover-list-icon:hover,
+.btn:hover, .icon:hover, .popover-list-icon:hover, .btn--primary:hover,
 button.button--primary:not(:disabled):not(.button--disabled):hover,
 .popover-list-icon::before:hover {
   color:#fff!important; border-color:#fff!important;
 }
 .teamDetails-header-nav, .notification-settings-subtext, .iconButton-label,
 code[class*="language-"], pre[class*="language-"].listItem.menuItem,
-.room-notification-title, .chip--light * {
+.room-notification-title, .chip--light *, .participant-list li,
+.listItem.menuItem {
   color:#eee;
   font-weight:bold!important;
 }
 .onboarding-modal, #activities .activity-item.me .activity-text,
 .notification-settings-subtext, .listDivider--gray, .popover-list-icon,
-.popover-list-icon::before, .subheader div {
+.listitem.menuItem, .listItem.primaryText, .popover-list-icon::before, .subheader div,
+.room-actions-menu {
   color:#aaa;
 }
 #activities .activity-item.me .activity-text {
@@ -240,34 +273,40 @@ code[class*="language-"], pre[class*="language-"].listItem.menuItem,
 img.avatar-img[src*="default_avatar"] {
   filter:contrast(90%) invert(100%) brightness(250%);
 }
-#activity-list img.avatar-img:hover, .readReceipts-item--postfix:hover {
+li.roomListItem div.avatar:not([title]):hover, div.avatar--self:hover,
+div.avatar[title]:hover, .readReceipts-item--postfix:hover {
   filter:drop-shadow(0 0 .5rem #fff);
 }
-#activity-list img.avatar-img[src*="default_avatar"]:hover {
+img.avatar-img[src*="default_avatar"]:hover {
   filter:contrast(90%) invert(100%) brightness(250%) drop-shadow(0 0 .5rem #fff);
 }
-#message-composer, input, textarea, select, option,
-.settings .settings-header, #settings-menu {
+#message-composer, input, textarea:not(#search-composer), select, option,
+.settings .settings-header, #settings-menu, .dockedSearch .search-input {
   background-color:rgba(255,255,255,.1)!important; color:#eee!important;
   font-weight:bold!important;
 }
 option { background-color:#555!important; } /* can't be (semi)transparent in chrome? */
+.participant-list li:hover, .listItem.menuItem:hover,
 .settings #settings-menu ul li:hover, .settings #settings-menu ul li.active {
   background-color:rgba(255,255,255,.1)!important;
   color:#09f!important;
 }
 .react-mentions .control .highlighter strong {
   background:transparent; outline:none;
-  font-weight:bold; color:#f05f20;
-  text-shadow:#100 0 0 1px; z-index:9; position:relative;
+  font-weight:bold; color:#f05f20; text-shadow:#100 0 0 1px;
+  z-index:9; position:relative; /* top:-1px; */
 }
-#activity-list [class*=" icon-cisco-"]:hover:before,
-#activity-list [class^=icon-cisco-]:hover:before {
+#activity-list div.avatar:not(.avatar--self) [class*=" icon-cisco-"]:not(.options):hover:before,
+#activity-list div.avatar:not(.avatar--self) [class^="icon-cisco-"]:not(.options):hover:before {
   color:#fff;
+}
+.navigation-item--badgeCount, .unread-count-badge {
+  background:rgba(50,50,52,.85); font-weight:bold;
+  line-height:1.8em /* very minor vertical alignment correction */;
 }
 
 /* Talos theme */
-@import url('https://fonts.googleapis.com/css?family=Exo+2');
+@import url('https://fonts.googleapis.com/css?family=Exo+2&subset=cyrillic,latin-ext');
 body { margin:0!important; padding:0!important; }
 #talos_bg {
   background-color:#222; width:100%; height:100%;
@@ -281,6 +320,9 @@ h1,h2,h3, .onboarding-form-instructions, .roomListItem-title-text,
 .dial-out-title, .room-notification-title {
   font-family:"Exo 2", CiscoSansTTThin, "Helvetica Neue", Arial, sans-serif!important;
 }
+#activities .activity-item .content.more-options-open .activity-text {
+  font-family:inherit!important;
+}
 .dockedSearch, .popover-list-container {
   background:rgba(0,0,0,.85) !important;
 }
@@ -290,7 +332,9 @@ pre[class*="language-"] {
 }
 .dockedSearch ul li p { color:inherit; }
 .roomListItem-description { color:inherit; }
-.dockedSearch .message:hover, .dial-out-title { font-weight:bold; color:#eee; }
+.dockedSearch .message:hover, .dial-out-title, #search-composer {
+  font-weight:bold!important; color:#eee;
+}
 .column { color:#777; }
 .dockedSearch .roomListItem-description span:first-child {
   color:#259; font-weight:bold;
@@ -309,7 +353,12 @@ pre[class*="language-"] {
 .dockedSearch ul li.current-selection {
   background-color:rgba(99,99,99,.15);
 }
-#activities .activity-item:nth-child(2n+1):not(.system-message):hover { filter:drop-shadow(0 0 .1rem #222); }
+.peopleList .listItemWrapper:nth-child(2n+1):not(:hover) {
+  background-color:rgba(0,0,0,.25);
+}
+#activities .activity-item:nth-child(2n+1):not(.system-message):hover {
+  filter:drop-shadow(0 0 .1rem #222);
+}
 
   `; //* end of CSS
 

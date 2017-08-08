@@ -26,7 +26,7 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1
+// @version	1.0+20161007
 // @author	Adam Katz
 // @copyright	2016, Adam Katz <https://stackexchange.com/users/674651>
 // @license	ISC; http://opensource.org/licenses/ISC
@@ -48,7 +48,9 @@
 // OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-// In addition to the license granted above, the authors, to the extent we
+// Beerware: If you think this is worth it, you are welcome to buy me a beer.
+
+// In addition to the licenses granted above, the authors, to the extent we
 // are authorized to do so, and subject to the disclaimer stated above, hereby
 // grant Stack Exchange, Inc. permission to make use of this software in any
 // way they see fit, including but not limited to incorporating all or parts of
@@ -64,10 +66,24 @@ if (code_blocks) {
   stylesheet.type = "text/css";
 
   var css = /* syn=css */ `
+    
+    /* Ensure links in code are only barely distinguishable until hovered.
+     * Uses a CSS filter b/c StackExchange sites use different color schemes */
+    .post-text pre a:not(:hover) {
+      /* note to self: brightness() isn't very good at text colors */
+      color:inherit; filter:brightness(1.5) sepia(50%);
+    }
+    .post-text pre a:not(:hover) .com { /* comments within links */
+      filter:brightness(0.75) sepia(20%);
+    }
+
     .post-text pre.wider:hover {
       background-color:rgba(236,236,236,0.92); /* a tiny bit of transparency */
       position:relative; z-index:9; /* don't disrupt later elements */
-      overflow-x:scroll; /* don't move later elements up by scrollbar height */
+      /* This previously used overflow-x:scroll but box-sizing:border-box fails
+       * to account for the scrollbar even though it was previously present,
+       * so we use overflow-x:hidden instead. This "shouldn't" matter */
+      overflow-x:hidden; /* don't move later elements up by scrollbar height */
       box-sizing: border-box; /* fails to count scroll bar.  Firefox BUG? */
       width:-moz-fit-content; width:-webkit-fit-content; width:fit-content;
 
@@ -79,6 +95,7 @@ if (code_blocks) {
     }
     .post-text pre.wider.widest:hover {
       left:0!important; /* enable offset correction in js code */
+      overflow-x:auto;  /* this MIGHT require scroll and/or !important */
     }
     code {
       font-family: Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,Consolas,Menlo,Liberation Mono,monospace;
@@ -97,6 +114,13 @@ if (code_blocks) {
 
   ///// Designate which code blocks need to grow and by how much
   for (var c = 0, cl = code_blocks.length; c < cl; c++) {
+
+    // Make links clickable.
+    code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
+      // avoid ampersands (escaped ampersands are okay) + trailing punctuation
+      /([^\w.-])(https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
+      '$1<a href="$2">$2</a>');
+
     var width = code_blocks[c].scrollWidth;
     var offset = code_blocks[c].getBoundingClientRect().x;
     if (width && width > code_blocks[c].clientWidth) {

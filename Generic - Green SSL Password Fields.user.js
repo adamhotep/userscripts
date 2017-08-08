@@ -1,24 +1,25 @@
 // ==UserScript==
-// @name           Green SSL Password Fields
-// @namespace      http://khopis.com/scripts
+// @name           Generic - Green SSL Password Fields
+// @namespace      https://github.com/adamhotep/userscripts
 // @description    Colors the passwd field green if secure, red if not
 // @include        *
-// @icon           http://img402.imageshack.us/img402/3606/securecubegreen.png
-// @author         Adam Katz <https://github.com/adamhotep/userscripts>
+// @grant          none
+// @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/secure-cube-green.png
+// @author         Adam Katz
 // @version        0.6+20161005
 // @copyright      2010+ by Adam Katz
-// @license        AGPL v3+
+// @license        GPL v3
 // @licstart       The following is the entire license notice for this script.
 /* 
  * Copyright (C) 2010-2016  Adam Katz
  *
  * This program is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or (at your
- * option) any later version.  This program is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * under the terms of version 3 of the GNU General Public License as published
+ * by the Free Software Foundation. This program is distributed in the hope
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License at <http://www.gnu.org/licenses>.
+ * included LICENSE file or else http://www.gnu.org/licenses for more details.
+ *
  * Beerware: If you think this is worth it, you are welcome to buy me a beer.
  */ 
 // @licend         The above is the entire license notice for this script.
