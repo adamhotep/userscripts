@@ -6,7 +6,7 @@
 // @grant          none
 // @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/secure-cube-green.png
 // @author         Adam Katz
-// @version        0.6+20161005
+// @version        0.6+20170910
 // @copyright      2010+ by Adam Katz
 // @license        GPL v3
 // @licstart       The following is the entire license notice for this script.
@@ -36,7 +36,11 @@ function addStyle(content) {
   style.type = "text/css";
   style.appendChild(document.createTextNode(content));
   var head = document.getElementsByTagName("head");
-  head && head[0] ? head = head[0] : head = document.body;
+  if (head && head[0]) {
+    head = head[0];
+  } else {
+    head = document.body;
+  }
   head.appendChild(style);
 }
 
