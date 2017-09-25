@@ -8,8 +8,8 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
-// @version	1.0
-// @lastupdated	2017-09-19
+// @version	1.0.1
+// @lastupdated	2017-09-25
 // @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require	https://gist.github.com/raw/2625891/waitForKeyElements.js
 // @grant	GM_addStyle
@@ -33,6 +33,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
   var href = article.querySelector(`a.story-sourcelnk, a.submission-sourcelnk`);
   if (! href || ! href.href) {
     href = article.querySelector(`div.p > i a[rel][href]`);
+    if (! href ) { href = article.querySelector(`div.p > i a[href]`); }
     if (! href || ! href.href) { return; }
   }
   var host = href.innerHTML;
@@ -54,9 +55,9 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
         );
       }
       desc = desc && desc[1] || title;
-      // try to truncate at a word or else truncate at 300 chars anyway
-      desc = asHTML(desc).replace(/^(.{256,300})\s.*$/, "$1 …")
-                         .replace(/^(.{300}).*$/, "$1…");
+      // try to truncate at a word or else truncate to 500 chars anyway
+      desc = asHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
+                         .replace(/^(.{499}).*$/, "$1…");
 
       var image = html.match(	// twitter card image
         /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](http[^"']+)['"]){2}/i
