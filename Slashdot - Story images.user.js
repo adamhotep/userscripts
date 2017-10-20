@@ -8,10 +8,10 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
-// @version	1.0.1
-// @lastupdated	2017-09-25
+// @version	1.0.2
+// @lastupdated	2017-10-20
 // @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require	https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @require	https://git.io/waitForKeyElements
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // ==/UserScript==
@@ -20,11 +20,14 @@ waitForKeyElements( /* syn=css */
   `article.article:not([style*="margin-bottom"])`,
   onNewArticle);
 
-// render given text as HTML (unescapes ampersands)
-function asHTML(text) {
+// render given text as HTML and convert to text (unescapes ampersands)
+function fromHTML(text) {
   var html = $('<div>').html(text);
-  if (html && html[0] && html[0].innerText) { return html[0].innerText; }
-  return "";
+  if (html && html[0] && html[0].innerText) { text = html[0].innerText; }
+  return text
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")	// fix 2x-escaped tags
+    .replace(/<\/?[^>]+>/g, "");			// remove tags
+  ;
 }
 
 function onNewArticle(jQuery) { jQuery.each( function(index) {
@@ -56,7 +59,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
       }
       desc = desc && desc[1] || title;
       // try to truncate at a word or else truncate to 500 chars anyway
-      desc = asHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
+      desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
                          .replace(/^(.{499}).*$/, "$1…");
 
       var image = html.match(	// twitter card image
@@ -69,34 +72,35 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
       }
       if (! image) {
         image = html.match(	// other meta content images
-          /<meta\b[^>]*\scontent=['"](http[^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
+          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
         );
       }
       if (! image) {
         image = html.match(	// first linked image
-          /<a\b[^>]*\shref=['"](http[^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
+          /<a\b[^>]*\shref=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
         );
       }
       if (image) { image = image[1]; }
 
-      function getImage(code, base, ext) {
+      function getImage(code, ext) {
         var skip = `[^'"]*(?:banner|logo|\\b[0-9]{1,2}px|advert|\\bad[sv]?\\b)`;
         var extra = `(?:[?&\\/#][^'"]*)?`;
         var match = code.match( RegExp(
           `<img\\b[^>]*\\ssrc=['"]((${skip})?[^"']+\\.${ext}${extra})['"]`,
           "i") );
-        if (match && !match[2]) {
-          var image = match[1];
-          if (image.match(/^(?:https?:)?\/\//)) { return image; }
-          if (0 == image.indexOf("/")) {		// relative to root
-            return base.match(/https:..[^\/:?#]*/) + image;
-          }
-          return base.replace(/\/[^\/]*$/, image);	// fully relative
-        }
+        if (match && !match[2]) { return match[1]; }
         return ""; // not found
       }
-      if (! image) { image = getImage(html, href.href, "jpe?g"); }
-      if (! image) { image = getImage(html, href.href, "png"); }
+      if (! image) { image = getImage(html, "jpe?g"); }
+      if (! image) { image = getImage(html, "png"); }
+
+      if (!image.match(/^(?:https?)?:\/\//)) {		// not absolute
+        if (0 == image.indexOf("/")) {			// relative to root
+          image = href.href.match(/^https?:\/\/[^\/:?#]*/) + image;
+        } else {					// fully relative
+          image = href.href.replace(/\/[^\/]*$/, "/" + image);
+        }
+      }
 
       var body = article.querySelector("div.body");
       if (! image || ! body) { return; }
