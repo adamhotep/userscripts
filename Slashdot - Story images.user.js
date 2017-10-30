@@ -4,7 +4,6 @@
 // @description	Adds zoomable thumbnail for each story link
 // @include	https://slashdot.tld/*
 // @include	https://*.slashdot.tld/*
-// @exclude	https://idle.slashdot.tld/*
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
@@ -71,9 +70,13 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
         );
       }
       if (! image) {
-        image = html.match(	// other meta content images
-          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
-        );
+        var re =
+          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i;
+        while ( image = re.exec(html) ) {	// other meta content images
+          // accept only if what we found wasn't an icon or other exclusion
+          if (! image[0].match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
+          image = null;	// reset since an exclusion triggered
+        }
       }
       if (! image) {
         image = html.match(	// first linked image
