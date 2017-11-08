@@ -7,10 +7,10 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
-// @version	1.0.2
+// @version	1.0.3
 // @lastupdated	2017-10-20
 // @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require	https://git.io/waitForKeyElements
+// @require	https://git.io/waitForKeyElements.js
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // ==/UserScript==
