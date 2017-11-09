@@ -7,8 +7,8 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
-// @version	1.0.3
-// @lastupdated	2017-10-20
+// @version	1.0.4
+// @lastupdated	2017-11-09
 // @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require	https://git.io/waitForKeyElements.js
 // @grant	GM_addStyle
@@ -71,7 +71,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
       }
       if (! image) {
         var re =
-          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i;
+          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
           if (! image[0].match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
