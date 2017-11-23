@@ -59,12 +59,32 @@ function fromHTML(text) {
 function onNewArticle(jQuery) { jQuery.each( function(index) {
 
   var article = $(this)[0];
+  var body = article.querySelector("div.body");
   var href = article.querySelector(`a.story-sourcelnk, a.submission-sourcelnk`);
   if (! href || ! href.href) {
     href = article.querySelector(`div.p > i a[rel][href]`);
     if (! href ) { href = article.querySelector(`div.p > i a[href]`); }
     if (! href || ! href.href) { return; }
   }
+
+  // TODO: match playlists, zoom somehow, abstract into videos in linked pages
+  var youtube = href.href.match(
+    /^https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=)|youtu\.be\/)([\w-]{5,})/
+  );
+  if (youtube) {
+    var iframe = document.createElement("iframe");
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + youtube[1];
+    iframe.frameBorder = 0;
+    iframe.allowFullscreen = true;
+    iframe.className = "gm thumb youtube";
+
+    if (! body) { return; }
+
+    body.insertBefore(iframe, body.children[0]);
+
+    return true;
+  }
+
   var host = href.innerHTML;
 
   GM_xmlhttpRequest({
@@ -172,6 +192,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
 GM_addStyle(`
 
   .gm.thumb		{ float:right; text-align:right; cursor:zoom-in; }
+  .gm.thumb.youtube	{ margin-left:1ex; width:420px; height:240px; }
   .gm.thumb a		{ display:none; font-size:90%; text-align:center;
   			  width:-moz-min-content; width:min-content;
   			  max-width:33vw; white-space:nowrap; overflow:hidden;
