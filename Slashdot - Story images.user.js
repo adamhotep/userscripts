@@ -7,13 +7,40 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @copyright	2009 by Adam Katz
 // @license	GPL v3+
-// @version	1.0.4
-// @lastupdated	2017-11-09
+// @version	1.1.0
+// @lastupdated	2017-11-23
 // @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require	https://git.io/waitForKeyElements.js
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
+// @grant	GM.xmlHttpRequest
 // ==/UserScript==
+
+//// Greasemonkey 4 changed a lot. Here are some GM 3->4 compatibilty shims. {{{
+
+if (typeof GM_xmlhttpRequest == 'undefined'
+    && GM && typeof GM.xmlHttpRequest == 'function') {
+  var GM_xmlhttpRequest = GM.xmlHttpRequest;
+}
+
+// This GM_addStyle implementation is slightly modified from the GM 3->4 shim at
+// https://arantius.com/misc/greasemonkey/imports/greasemonkey4-polyfill.js
+if (typeof GM_addStyle == 'undefined') {
+  function GM_addStyle(aCss) {
+    'use strict';
+    let head = document.querySelector(`head, body`);
+    if (head) {
+      let style = document.createElement('style');
+      style.setAttribute('type', 'text/css');
+      style.textContent = aCss;
+      head.appendChild(style);
+      return style;
+    }
+    return null;
+  }
+}
+
+//// }}} end GM compatibility shims
 
 waitForKeyElements( /* syn=css */
   `article.article:not([style*="margin-bottom"])`,
@@ -62,11 +89,11 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
                          .replace(/^(.{499}).*$/, "$1…");
 
       var image = html.match(	// twitter card image
-        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](http[^"']+)['"]){2}/i
+        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"]((?:http|\/\/)[^"']+)['"]){2}/i
       );
       if (! image) {
-        image = html.match(	// other meta content images
-          /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](http[^"']+)['"]){2}/i
+        image = html.match(	// other meta content images, esp. "og:image"
+          /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"]((?:http|\/\/)[^"']+)['"]){2,3}/i
         );
       }
       if (! image) {
@@ -78,26 +105,35 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
           image = null;	// reset since an exclusion triggered
         }
       }
-      if (! image) {
-        image = html.match(	// first linked image
-          /<a\b[^>]*\shref=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/i
-        );
-      }
       if (image) { image = image[1]; }
 
-      function getImage(code, ext) {
-        var skip = `[^'"]*(?:banner|logo|\\b[0-9]{1,2}px|advert|\\bad[sv]?\\b)`;
-        var extra = `(?:[?&\\/#][^'"]*)?`;
-        var match = code.match( RegExp(
-          `<img\\b[^>]*\\ssrc=['"]((${skip})?[^"']+\\.${ext}${extra})['"]`,
-          "i") );
-        if (match && !match[2]) { return match[1]; }
+      // get images directly from HTML body
+      function getImage(code, tag, ext) {
+        var blacklist = [ 'https://lauren.vortex.com/lauren.jpg' ];
+        var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\"]*`
+                 +   `(?:`
+                 +     `banner|ico(?:\\b|n)|logo|\\b[0-9]{1,2}px`
+                 +     `|advert|\\bad[sv]?\\b`
+                 +   `))`;
+        var extra = `(?:[?&\\/#][^\'\"]*)?`;
+        var src = "src";
+        var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
+        var Q = `[^\'\"]`;	// "' // non-quotes character
+        if (tag == "a") { src = "href"; }
+        var regex = new RegExp(
+          `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+\\.${ext}${extra})${q}`,
+          "i");
+        var match = code.match(regex);
+        if (match) { return match[1]; }
         return ""; // not found
       }
-      if (! image) { image = getImage(html, "jpe?g"); }
-      if (! image) { image = getImage(html, "png"); }
+      if (! image) { image = getImage(html, "a", "jpe?g"); }
+      if (! image) { image = getImage(html, "a", "png"); }
+      if (! image) { image = getImage(html, "img", "jpe?g"); }
+      if (! image) { image = getImage(html, "img", "png"); }
 
-      if (!image.match(/^(?:https?)?:\/\//)) {		// not absolute
+      if (! image) { return; }
+      if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
           image = href.href.match(/^https?:\/\/[^\/:?#]*/) + image;
         } else {					// fully relative
@@ -106,7 +142,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
       }
 
       var body = article.querySelector("div.body");
-      if (! image || ! body) { return; }
+      if (! body) { return; }
       image = image.replace(/&amp;/g, "&");
 
       var img = document.createElement("img");
