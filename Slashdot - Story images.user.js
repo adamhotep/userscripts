@@ -2,19 +2,109 @@
 // @name	Slashdot - Article images
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Adds zoomable thumbnail for each story link
-// @include	https://slashdot.tld/*
-// @include	https://*.slashdot.tld/*
+// @include	https://slashdot.org/*
+// @include	https://*.slashdot.org/*
 // @author	Adam Katz <scriptsATkhopiscom>
-// @copyright	2009 by Adam Katz
-// @license	GPL v3+
-// @version	1.1.0
-// @lastupdated	2017-11-23
-// @require	https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require	https://git.io/waitForKeyElements.js
+// @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
+// @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
+// @version	1.2.0.20171126
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
+// Copyright 2009+ by Adam Katz, GPL v3+
+
+// previously had  @require https://git.io/waitForKeyElements.js
+// but it appears Greasemonkey 4.0 now fails to @require it
+function waitForKeyElements (	// {{{
+    selectorTxt,    /* Required: The querySelector string that
+                        specifies the desired element(s).
+                    */
+    actionFunction, /* Required: The code to run when elements are
+                        found. It is passed the matched element.
+                    */
+    bWaitOnce,      /* Optional: If false, will continue to scan for
+                        new elements even after the first match is
+                        found.
+                    */
+    iframeSelector  /* Optional: If set, identifies the iframe to
+                       search.
+                    */
+) {
+    var targetNodes, btargetsFound;
+
+    //--- Additionally avoid what we've found
+    selectorTxt = selectorTxt.replace(/(,)|$/g, ":not([wfke_found])$1");
+
+    if (typeof iframeSelector == "undefined")
+        //targetNodes     = $(selectorTxt);
+        targetNodes     = document.querySelectorAll(selectorTxt);
+    else
+        targetNodes = [];
+        var iframe = document.querySelectorAll(iframeSelector);
+        for (var i = 0, il = iframe.length; i < il; i++) {
+            var nodes = iframe[i].querySelectorAll(selectorTxt);
+            if (nodes) targetNodes.concat(nodes);
+        }
+
+    if (targetNodes  &&  targetNodes.length > 0) {
+        btargetsFound   = true;
+        //--- Found target node(s).  Go through each and act if they are new.
+        for (var t = 0, tl = targetNodes.length; t < tl; t++) {
+
+            if (!targetNodes[t].getAttribute("wfke_found")) {
+                //--- Call the payload function.
+                var cancelFound = false;
+                try {
+                    cancelFound     = actionFunction (targetNodes[t]);
+                }
+                //--- Log errors to console rather than stopping altogether
+                catch (error) {
+                    var name = actionFunction.name;
+                    if (name)
+                        name = 'in function "' + name + '":\n';
+                    console.log ("waitForKeyElements: actionFunction error\n"
+                        + name + error);
+                }
+                if (cancelFound)
+                    btargetsFound   = false;
+                else
+                    targetNodes[t].setAttribute("wfke_found", true);
+            }
+        }
+    }
+    else {
+        btargetsFound   = false;
+    }
+
+    //--- Get the timer-control variable for this selector.
+    var controlObj      = waitForKeyElements.controlObj  ||  {};
+    var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
+    var timeControl     = controlObj [controlKey];
+
+    //--- Now set or clear the timer as appropriate.
+    if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
+        //--- The only condition where we need to clear the timer.
+        clearInterval (timeControl);
+        delete controlObj [controlKey]
+    }
+    else {
+        //--- Set a timer, if needed.
+        if ( ! timeControl) {
+            timeControl = setInterval ( function () {
+                    waitForKeyElements (    selectorTxt,
+                                            actionFunction,
+                                            bWaitOnce,
+                                            iframeSelector
+                                        );
+                },
+                300
+            );
+            controlObj [controlKey] = timeControl;
+        }
+    }
+    waitForKeyElements.controlObj   = controlObj;
+} // }}}
 
 //// Greasemonkey 4 changed a lot. Here are some GM 3->4 compatibilty shims. {{{
 
@@ -46,20 +136,17 @@ waitForKeyElements( /* syn=css */
   `article.article:not([style*="margin-bottom"])`,
   onNewArticle);
 
-// render given text as HTML and convert to text (unescapes ampersands)
+// render text as HTML, convert to text, unescape items, remove remaining tags
 function fromHTML(text) {
-  var html = $('<div>').html(text);
-  if (html && html[0] && html[0].innerText) { text = html[0].innerText; }
-  return text
+  var html = document.createElement("div");
+  html.innerHTML = text;
+  return html.innerText
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">")	// fix 2x-escaped tags
     .replace(/<\/?[^>]+>/g, "");			// remove tags
-  ;
 }
 
-function onNewArticle(jQuery) { jQuery.each( function(index) {
-
-  var article = $(this)[0];
-  var body = article.querySelector("div.body");
+function onNewArticle(article) {
+  var body = article.querySelector(`div.body`);
   var href = article.querySelector(`a.story-sourcelnk, a.submission-sourcelnk`);
   if (! href || ! href.href) {
     href = article.querySelector(`div.p > i a[rel][href]`);
@@ -183,7 +270,7 @@ function onNewArticle(jQuery) { jQuery.each( function(index) {
     }
   });
 
-}); }
+}
 
 
 // BUG: images w/ widths determined by max-height can have captions from titles
