@@ -12,10 +12,15 @@
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
-// Copyright 2009+ by Adam Katz, GPL v3+
+// Copyright 2009+ by Adam Katz, GPL v3+ except for waitForKeyElements
+// waitForKeyElements is copyright BrockA and licensed CC BY-NC-SA 4.0
 
 // previously had  @require https://git.io/waitForKeyElements.js
-// but it appears Greasemonkey 4.0 now fails to @require it
+// but Greasemonkey 4.0 cannot incorporate Github gists due to
+// https://github.com/greasemonkey/greasemonkey/issues/2631 so here it is:
+//
+// waitForKeyElements was originally https://gist.github.com/BrockA/2625891
+// and modified to work without jQuery by me (see above git.io link).
 function waitForKeyElements (	// {{{
     selectorTxt,    /* Required: The querySelector string that
                         specifies the desired element(s).
