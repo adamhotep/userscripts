@@ -221,7 +221,10 @@ function onNewArticle(article) {
 
       // get images directly from HTML body
       function getImage(code, tag, ext) {
-        var blacklist = [ 'https://lauren.vortex.com/lauren.jpg' ];
+        var blacklist = [
+          'https://lauren.vortex.com/lauren.jpg',
+          '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
+        ];
         var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\"]*`
                  +   `(?:`
                  +     `banner|ico(?:\\b|n)|logo|\\b[0-9]{1,2}px`
@@ -232,8 +235,10 @@ function onNewArticle(article) {
         var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
         var Q = `[^\'\"]`;	// "' // non-quotes character
         if (tag == "a") { src = "href"; }
+        if (typeof ext === "undefined") { ext = ""; }
+        else { ext = '\\.' + ext; }
         var regex = new RegExp(
-          `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+\\.${ext}${extra})${q}`,
+          `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+${ext}${extra})${q}`,
           "i");
         var match = code.match(regex);
         if (match) { return match[1]; }
@@ -242,8 +247,8 @@ function onNewArticle(article) {
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
       if (! image) { image = getImage(html, "img", "jpe?g"); }
-      if (! image) { image = getImage(html, "img", "png"); }
-
+      if (! image) { image = getImage(html, "img"); }
+      
       if (! image) { return; }
       if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
