@@ -7,13 +7,14 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	1.2.0.20171126
+// @version	1.2.1.20171129
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
 // Copyright 2009+ by Adam Katz, GPL v3+ except for waitForKeyElements
 // waitForKeyElements is copyright BrockA and licensed CC BY-NC-SA 4.0
+// all changes tracked to adamhotep on github are also (dual-) licensed GPL v2+
 
 // previously had  @require https://git.io/waitForKeyElements.js
 // but Greasemonkey 4.0 cannot incorporate Github gists due to
@@ -39,18 +40,18 @@ function waitForKeyElements (	// {{{
     var targetNodes, btargetsFound;
 
     //--- Additionally avoid what we've found
-    selectorTxt = selectorTxt.replace(/(,)|$/g, ":not([wfke_found])$1");
+    var selectorClean = selectorTxt.replace(/(,)|$/g, ":not([wfke_found])$1");
 
     if (typeof iframeSelector == "undefined")
-        //targetNodes     = $(selectorTxt);
-        targetNodes     = document.querySelectorAll(selectorTxt);
-    else
+        targetNodes     = document.querySelectorAll(selectorClean);
+    else {
         targetNodes = [];
         var iframe = document.querySelectorAll(iframeSelector);
         for (var i = 0, il = iframe.length; i < il; i++) {
-            var nodes = iframe[i].querySelectorAll(selectorTxt);
-            if (nodes) targetNodes.concat(nodes);
+            var nodes = iframe[i].querySelectorAll(selectorClean);
+            if (nodes) targetNodes.concat(Array.from(nodes));
         }
+    }
 
     if (targetNodes  &&  targetNodes.length > 0) {
         btargetsFound   = true;
@@ -154,6 +155,7 @@ function onNewArticle(article) {
   var body = article.querySelector(`div.body`);
   var href = article.querySelector(`a.story-sourcelnk, a.submission-sourcelnk`);
   if (! href || ! href.href) {
+    // this uses the quoted area (an <i> tag) to avoid editor shout-out links
     href = article.querySelector(`div.p > i a[rel][href]`);
     if (! href ) { href = article.querySelector(`div.p > i a[href]`); }
     if (! href || ! href.href) { return; }
