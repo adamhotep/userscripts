@@ -161,13 +161,52 @@ function fromHTML(text) {
 function getContent(text) {
   if (! text) return null;
   text = text.toString();
-  var content = text.match(/\scontent="([^"]*)"/);	// double quotes
+  var content = text.match(/\s(?:content|src)="([^"]*)"/);	// double quotes
   if (content) return content[1];
-  content = text.match(/\scontent='([^']*)'/);		// single quotes
+  content = text.match(/\s(?:content|src)='([^']*)'/);		// single quotes
   if (content) return content[1];
-  content = text.match(/\scontent=(\S+)/);		// no quotes
+  content = text.match(/\s(?:content|src)=(\S+)/);		// no quotes
   if (content) return content[1];
   return null;
+}
+
+function insertYoutube(target, body) {
+  var iframe = document.createElement("iframe");
+  iframe.src = 'https://www.youtube-nocookie.com/embed/' + target;
+  iframe.frameBorder = 0;
+  iframe.allowFullscreen = true;
+  iframe.className = "gm thumb youtube";
+
+  if (! body) { return; }
+
+  return body.insertBefore(iframe, body.children[0]);
+}
+
+// get images directly from HTML body
+function getImage(code, tag, ext) {
+  var blacklist = [
+    'https://lauren.vortex.com/lauren.jpg',
+    '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
+  ];
+  var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\">]*`
+           +   `(?:`
+           +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|n)|logo`
+           +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
+           +     `|[^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b`
+           +   `))`;
+  var extra = `(?:[?&\\/#][^\'\"]*)?`;
+  var src = "src";
+  var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
+  var Q = `[^\'\"]`;	// "' // non-quotes character
+  if (tag == "a") { src = "href"; }
+  if (typeof ext === "undefined") { ext = ""; }
+  else { ext = '\\.' + ext; }
+  var regex = new RegExp(
+    `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+${ext}${extra})${q}`,
+    "i");
+  var match = code.match(regex);
+  if (match) { return match[1]; }
+  return ""; // not found
 }
 
 function onNewArticle(article) {
@@ -180,22 +219,13 @@ function onNewArticle(article) {
     if (! href || ! href.href) { return; }
   }
 
+  // direct youtube link
   // TODO: match playlists, zoom somehow, abstract into videos in linked pages
   var youtube = href.href.match(
     /^https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=)|youtu\.be\/)([\w-]{5,})/
   );
-  if (youtube) {
-    var iframe = document.createElement("iframe");
-    iframe.src = 'https://www.youtube-nocookie.com/embed/' + youtube[1];
-    iframe.frameBorder = 0;
-    iframe.allowFullscreen = true;
-    iframe.className = "gm thumb youtube";
-
-    if (! body) { return; }
-
-    href.setAttribute("sai-youtube", true);
-    body.insertBefore(iframe, body.children[0]);
-
+  if (youtube && insertYoutube(youtube[1], body)) {
+    href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
     return true;
   }
 
@@ -222,9 +252,23 @@ function onNewArticle(article) {
       desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
                            .replace(/^(.{499}).+$/, "$1…");
 
-      var image = html.match(	// twitter card image
-        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
+      var body = q$(`div.body`, article);
+      if (! body) { return; }
+
+      // if youtube
+      var image = html.match(	// embedded youtube video
+        /<iframe\b(?:\s(?!src=)\S+)*\ssrc="(?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([^'"\s]+)/i
       );
+      if (image && insertYoutube(image[1], body)) {
+        href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
+        return true;
+      }
+
+      if (! image) {
+        image = html.match(	// twitter card image
+          /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
+        );
+      }
       if (! image) {
         image = html.match(	// other meta content images, esp. "og:image"
           /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
@@ -241,32 +285,6 @@ function onNewArticle(article) {
       }
       image = getContent(image);
 
-      // get images directly from HTML body
-      function getImage(code, tag, ext) {
-        var blacklist = [
-          'https://lauren.vortex.com/lauren.jpg',
-          '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
-        ];
-        var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\"]*`
-                 +   `(?:`
-                 +     `banner|ico(?:\\b|n)|logo|\\b[0-9]{1,2}px`
-                 +     `|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
-                 +     `|advert|\\bad[sv]?\\b`
-                 +   `))`;
-        var extra = `(?:[?&\\/#][^\'\"]*)?`;
-        var src = "src";
-        var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
-        var Q = `[^\'\"]`;	// "' // non-quotes character
-        if (tag == "a") { src = "href"; }
-        if (typeof ext === "undefined") { ext = ""; }
-        else { ext = '\\.' + ext; }
-        var regex = new RegExp(
-          `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+${ext}${extra})${q}`,
-          "i");
-        var match = code.match(regex);
-        if (match) { return match[1]; }
-        return ""; // not found
-      }
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
       // trim wordpress down to just the actual story content
@@ -275,9 +293,9 @@ function onNewArticle(article) {
         image = getImage(html, tag, "jpe?g");
         if (! image) { image = getImage(html, tag); }
       }
-      if (! image) { image = getImage(html, "img", "jpe?g"); }
+      if (! image) { image = getImage(html, "img", "(?:jpe?g|png)"); }
       if (! image) { image = getImage(html, "img"); }
-      
+    
       if (! image) { return; }
       if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
@@ -287,8 +305,7 @@ function onNewArticle(article) {
         }
       }
 
-      var body = q$(`div.body`, article);
-      if (! body) { return; }
+
       image = image.replace(/&amp;/g, "&");
 
       var img = document.createElement("img");
