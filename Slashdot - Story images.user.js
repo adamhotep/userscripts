@@ -49,7 +49,7 @@ function waitForKeyElements (	// {{{
         var iframe = document.querySelectorAll(iframeSelector);
         for (var i = 0, il = iframe.length; i < il; i++) {
             var nodes = iframe[i].querySelectorAll(selectorClean);
-            if (nodes) targetNodes.concat(Array.from(nodes));
+            if (nodes) targetNodes.concat(nodes);
         }
     }
 
@@ -142,6 +142,11 @@ waitForKeyElements( /* syn=css */
   `article.article:not([style*="margin-bottom"])`,
   onNewArticle);
 
+// some short-hand
+function q$(css, up=document) {
+  return up.querySelector(css);
+}
+
 // render text as HTML, convert to text, unescape items, remove remaining tags
 function fromHTML(text) {
   var html = document.createElement("div");
@@ -151,13 +156,27 @@ function fromHTML(text) {
     .replace(/<\/?[^>]+>/g, "");			// remove tags
 }
 
+// needed because we can't use capture inside repeated element. For example:
+// /(?:&foo=(bar)|&baz=blah){2}/ fails to capture bar in &foo=bar&baz=blah
+function getContent(text) {
+  if (! text) return null;
+  text = text.toString();
+  var content = text.match(/\scontent="([^"]*)"/);	// double quotes
+  if (content) return content[1];
+  content = text.match(/\scontent='([^']*)'/);		// single quotes
+  if (content) return content[1];
+  content = text.match(/\scontent=(\S+)/);		// no quotes
+  if (content) return content[1];
+  return null;
+}
+
 function onNewArticle(article) {
-  var body = article.querySelector(`div.body`);
-  var href = article.querySelector(`a.story-sourcelnk, a.submission-sourcelnk`);
+  var body = q$(`div.body`, article);
+  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk`, article);
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
-    href = article.querySelector(`div.p > i a[rel][href]`);
-    if (! href ) { href = article.querySelector(`div.p > i a[href]`); }
+    href = q$(`div.p > i a[rel][href]:not([sai-youtube])`, article);
+    if (! href ) { href = q$(`div.p > i a[href]:not([sai-youtube])`, article); }
     if (! href || ! href.href) { return; }
   }
 
@@ -174,6 +193,7 @@ function onNewArticle(article) {
 
     if (! body) { return; }
 
+    href.setAttribute("sai-youtube", true);
     body.insertBefore(iframe, body.children[0]);
 
     return true;
@@ -190,36 +210,36 @@ function onNewArticle(article) {
       var title = html.match(/<title[^>]*>([^<]+)<.title>/im) || "";
       title = title && title[1];
       var desc = html.match(	// description for twitter cards
-        /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"]([^'"]{6,})([^'"]*)['"]){2}/i
+        /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"][^'"]{6,}['"]){2}/i
       );
       if (! desc) {		// meta description proper
         var desc = html.match(
-          /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"]([^'"]{6,})['"]){2}/i
+          /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"][^'"]{6,}['"]){2}/i
         );
       }
-      desc = desc && desc[1] || title;
+      desc = getContent(desc) || title;
       // try to truncate at a word or else truncate to 500 chars anyway
       desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
-                         .replace(/^(.{499}).*$/, "$1…");
+                           .replace(/^(.{499}).+$/, "$1…");
 
       var image = html.match(	// twitter card image
-        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"]((?:http|\/\/)[^"']+)['"]){2}/i
+        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
       );
       if (! image) {
         image = html.match(	// other meta content images, esp. "og:image"
-          /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"]((?:http|\/\/)[^"']+)['"]){2,3}/i
+          /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
         );
       }
       if (! image) {
         var re =
-          /<meta\b[^>]*\scontent=['"]([^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?)['"]/gi;
+          /<meta\b[^>]*\scontent=['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
-          if (! image[0].match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
-          image = null;	// reset since an exclusion triggered
+          if (! image.match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
+          image = null; 	// reset since an exclusion triggered
         }
       }
-      if (image) { image = image[1]; }
+      image = getContent(image);
 
       // get images directly from HTML body
       function getImage(code, tag, ext) {
@@ -230,6 +250,7 @@ function onNewArticle(article) {
         var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\"]*`
                  +   `(?:`
                  +     `banner|ico(?:\\b|n)|logo|\\b[0-9]{1,2}px`
+                 +     `|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
                  +     `|advert|\\bad[sv]?\\b`
                  +   `))`;
         var extra = `(?:[?&\\/#][^\'\"]*)?`;
@@ -248,6 +269,12 @@ function onNewArticle(article) {
       }
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
+      // trim wordpress down to just the actual story content
+      if (! image && html.match(/<link\s.{9,256}\/wp-content\//)) { 
+        var tag = `img(?=\\s[^>]*\\bwp-image\\b)`;
+        image = getImage(html, tag, "jpe?g");
+        if (! image) { image = getImage(html, tag); }
+      }
       if (! image) { image = getImage(html, "img", "jpe?g"); }
       if (! image) { image = getImage(html, "img"); }
       
@@ -260,7 +287,7 @@ function onNewArticle(article) {
         }
       }
 
-      var body = article.querySelector("div.body");
+      var body = q$(`div.body`, article);
       if (! body) { return; }
       image = image.replace(/&amp;/g, "&");
 
