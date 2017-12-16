@@ -7,7 +7,7 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	1.2.1.20171129
+// @version	2.0.0.20171214
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -170,18 +170,6 @@ function getContent(text) {
   return null;
 }
 
-function insertYoutube(target, body) {
-  var iframe = document.createElement("iframe");
-  iframe.src = 'https://www.youtube-nocookie.com/embed/' + target;
-  iframe.frameBorder = 0;
-  iframe.allowFullscreen = true;
-  iframe.className = "gm thumb youtube";
-
-  if (! body) { return; }
-
-  return body.insertBefore(iframe, body.children[0]);
-}
-
 // get images directly from HTML body
 function getImage(code, tag, ext) {
   var blacklist = [
@@ -209,24 +197,52 @@ function getImage(code, tag, ext) {
   return ""; // not found
 }
 
+function embedYoutube(target) {
+  var iframe = document.createElement("iframe");
+  iframe.src = 'https://www.youtube-nocookie.com/embed/' + target;
+  iframe.frameBorder = 0;
+  iframe.allowFullscreen = true;
+  iframe.className = "gm thumb youtube";
+  return iframe;
+}
+
+// make the thumb (returns the thumb, append the link to it)
+function mkthumb(image, video=null) {
+  var thumb = document.createElement("div");
+  if (video) { thumb.appendChild(video); }
+  var img = document.createElement("img");
+  img.src = image;
+  thumb.appendChild(img);
+  thumb.setAttribute("onclick", /* syn=js */
+    `this.classList.toggle("zoomed")`);
+  thumb.className = "gm thumb";
+  return thumb;
+}
+
 function onNewArticle(article) {
   var body = q$(`div.body`, article);
-  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk`, article);
+  var noyt = `:not([sai-youtube])`;
+  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk${noyt}`, article);
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
-    href = q$(`div.p > i a[rel][href]:not([sai-youtube])`, article);
-    if (! href ) { href = q$(`div.p > i a[href]:not([sai-youtube])`, article); }
+    href = q$(`div.p > i a[rel][href]`, article);
+    if (! href ) { href = q$(`div.p > i a[href]${noyt})`, article); }
     if (! href || ! href.href) { return; }
   }
 
   // direct youtube link
-  // TODO: match playlists, zoom somehow, abstract into videos in linked pages
+  // TODO: playlists? hints at https://stackoverflow.com/a/30419360/519360 #2
   var youtube = href.href.match(
     /^https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=)|youtu\.be\/)([\w-]{5,})/
   );
-  if (youtube && insertYoutube(youtube[1], body)) {
-    href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
-    return true;
+  if (youtube) {
+    var image = "https://i.ytimg.com/vi/" + youtube[1] + "/mqdefault.jpg";
+    youtube = embedYoutube(youtube[1]);
+    if (youtube && body.insertBefore(youtube, body.children[0])) {
+      href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
+      body.insertBefore(mkthumb(image, youtube), body.children[0]);
+      return true;
+    }
   }
 
   var host = href.innerHTML;
@@ -255,20 +271,17 @@ function onNewArticle(article) {
       var body = q$(`div.body`, article);
       if (! body) { return; }
 
-      // if youtube
-      var image = html.match(	// embedded youtube video
+      var youtube = html.match(	// embedded youtube video
         /<iframe\b(?:\s(?!src=)\S+)*\ssrc="(?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([^'"\s]+)/i
       );
-      if (image && insertYoutube(image[1], body)) {
+      if (youtube) {
+        youtube = embedYoutube(youtube[1]);
         href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
-        return true;
       }
 
-      if (! image) {
-        image = html.match(	// twitter card image
-          /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
-        );
-      }
+      var image = html.match(	// twitter card image
+        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
+      );
       if (! image) {
         image = html.match(	// other meta content images, esp. "og:image"
           /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
@@ -305,21 +318,13 @@ function onNewArticle(article) {
         }
       }
 
-
       image = image.replace(/&amp;/g, "&");
 
-      var img = document.createElement("img");
-      img.src = image;
-
-      var thumb = document.createElement("div");
-      thumb.setAttribute("onclick", /* syn=js */
-        `this.classList.toggle("zoomed")`);
-      thumb.className = "gm thumb";
+      var thumb = mkthumb(image, youtube);
       if (desc) { thumb.title = desc; }
-      thumb.appendChild(img);
       thumb_link = href.cloneNode(true);
       if (title) { thumb_link.innerHTML = title; }
-      thumb.appendChild( thumb_link );
+      thumb.appendChild(thumb_link);
 
       body.insertBefore(thumb, body.children[0]);
 
@@ -335,7 +340,9 @@ function onNewArticle(article) {
 GM_addStyle(`
 
   .gm.thumb		{ float:right; text-align:right; cursor:zoom-in; }
-  .gm.thumb.youtube	{ margin-left:1ex; width:420px; height:240px; }
+  .gm.thumb .youtube	{ float:none; width:420px; height:240px; }
+  .gm.thumb.zoomed .youtube + img, .gm.thumb:not(.zoomed) .youtube
+  			{ display:none; }
   .gm.thumb a		{ display:none; font-size:90%; text-align:center;
   			  width:-moz-min-content; width:min-content;
   			  max-width:33vw; white-space:nowrap; overflow:hidden;
