@@ -7,7 +7,7 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.0.0.20171214
+// @version	2.1.0.20180113
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -124,7 +124,7 @@ if (typeof GM_xmlhttpRequest == 'undefined'
 if (typeof GM_addStyle == 'undefined') {
   function GM_addStyle(aCss) {
     'use strict';
-    let head = document.querySelector(`head, body`);
+    let head = document.head;
     if (head) {
       let style = document.createElement('style');
       style.setAttribute('type', 'text/css');
@@ -139,7 +139,7 @@ if (typeof GM_addStyle == 'undefined') {
 //// }}} end GM compatibility shims
 
 waitForKeyElements( /* syn=css */
-  `article.article:not([style*="margin-bottom"])`,
+  `article.article:not([sai-done]):not([style*="margin-bottom"])`,
   onNewArticle);
 
 // some short-hand
@@ -202,7 +202,7 @@ function embedYoutube(target) {
   iframe.src = 'https://www.youtube-nocookie.com/embed/' + target;
   iframe.frameBorder = 0;
   iframe.allowFullscreen = true;
-  iframe.className = "gm thumb youtube";
+  iframe.className = "gm thumb video";
   return iframe;
 }
 
@@ -220,13 +220,13 @@ function mkthumb(image, video=null) {
 }
 
 function onNewArticle(article) {
+  article.setAttribute("sai-done", "true");
   var body = q$(`div.body`, article);
-  var noyt = `:not([sai-youtube])`;
-  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk${noyt}`, article);
+  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk`, article);
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
     href = q$(`div.p > i a[rel][href]`, article);
-    if (! href ) { href = q$(`div.p > i a[href]${noyt})`, article); }
+    if (! href ) { href = q$(`div.p > i a[href])`, article); }
     if (! href || ! href.href) { return; }
   }
 
@@ -237,10 +237,14 @@ function onNewArticle(article) {
   );
   if (youtube) {
     var image = "https://i.ytimg.com/vi/" + youtube[1] + "/mqdefault.jpg";
+    var youtu = "https://youtu.be/" + youtube[1];
     youtube = embedYoutube(youtube[1]);
     if (youtube && body.insertBefore(youtube, body.children[0])) {
-      href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
-      body.insertBefore(mkthumb(image, youtube), body.children[0]);
+      var thumb = mkthumb(image, youtube);
+      var thumb_link = href.cloneNode(true);
+      thumb_link.href = thumb_link.innerHTML = youtu;
+      thumb.appendChild(thumb_link);
+      body.insertBefore(thumb, body.children[0]);
       return true;
     }
   }
@@ -263,7 +267,8 @@ function onNewArticle(article) {
           /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"][^'"]{6,}['"]){2}/i
         );
       }
-      desc = getContent(desc) || title;
+      desc = getContent(desc);
+      if (!desc || title.length > desc.length) { desc = title; }
       // try to truncate at a word or else truncate to 500 chars anyway
       desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
                            .replace(/^(.{499}).+$/, "$1…");
@@ -276,7 +281,6 @@ function onNewArticle(article) {
       );
       if (youtube) {
         youtube = embedYoutube(youtube[1]);
-        href.setAttribute("sai-youtube", true);	// try to avoid looping (fails?)
       }
 
       var image = html.match(	// twitter card image
@@ -292,7 +296,7 @@ function onNewArticle(article) {
           /<meta\b[^>]*\scontent=['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
-          if (! image.match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
+          if (image && ! image.match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
           image = null; 	// reset since an exclusion triggered
         }
       }
@@ -322,7 +326,7 @@ function onNewArticle(article) {
 
       var thumb = mkthumb(image, youtube);
       if (desc) { thumb.title = desc; }
-      thumb_link = href.cloneNode(true);
+      var thumb_link = href.cloneNode(true);
       if (title) { thumb_link.innerHTML = title; }
       thumb.appendChild(thumb_link);
 
@@ -334,14 +338,26 @@ function onNewArticle(article) {
 }
 
 
+var magnifier = "data:image/svg+xml," + /* SVG from Wikipedia, syn=xml */
+  `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+   <svg xmlns='http://www.w3.org/2000/svg' width='15' height='11'
+        viewBox='0 0 11 15'>
+     <g fill='#fff' stroke='#366'>
+       <path d='M1.509 1.865h10.99v7.919h-10.99z'/>
+       <path d='M-1.499 6.868h5.943v4.904h-5.943z'/>
+     </g>
+   </svg>`
+  .replace(/</g, "%3C").replace(/>/g, "%3E")   // escape() would do too much
+  .replace(/\n/g, "%0A").replace(/#/g, "%23"); // encodeURI() would do too much
+
 // BUG: images w/ widths determined by max-height can have captions from titles
 // that are truncated to the max-width rather than the smaller actual width
 
 GM_addStyle(`
 
   .gm.thumb		{ float:right; text-align:right; cursor:zoom-in; }
-  .gm.thumb .youtube	{ float:none; width:420px; height:240px; }
-  .gm.thumb.zoomed .youtube + img, .gm.thumb:not(.zoomed) .youtube
+  .gm.thumb .video	{ float:none; width:420px; height:240px; }
+  .gm.thumb.zoomed .video + img, .gm.thumb:not(.zoomed) .video
   			{ display:none; }
   .gm.thumb a		{ display:none; font-size:90%; text-align:center;
   			  width:-moz-min-content; width:min-content;
@@ -350,7 +366,8 @@ GM_addStyle(`
   .gm.thumb img		{ max-width:20vw; max-height:15vh;
   			  border-radius:1ex; border:1px solid transparent }
   .gm.thumb:hover img	{ border-radius:0; border-color:#016765; }
-  .gm.thumb.zoomed	{ cursor:zoom-out; }
+  .gm.thumb.zoomed	{ background:url("${magnifier}") bottom right no-repeat;
+  			  cursor:zoom-out; }
   .gm.thumb.zoomed img	{ max-width:33vw; max-height:33vh; }
   .gm.thumb.zoomed a	{ display:block; }
 
