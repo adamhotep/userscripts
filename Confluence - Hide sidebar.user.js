@@ -1,12 +1,18 @@
 // ==UserScript==
-// @name        Confluence - Hide sidebar
+// @name        Confluence - Minor cosmetic improvements
+// @describe    Collapse sidebar by default, gray calendar weekends
 // @namespace   https://github.com/adamhotep/userscripts
-// @description Collapse the sidebar upon page load
-// @include     https://confluence.*
-// @include     http://confluence.*
+// @include     https://wiki.*/display/*
+// @include     https://wiki.*/pages/viewpage.action?pageId=*
+// @include     http://wiki.*/display/*
+// @include     http://wiki.*/pages/viewpage.action?pageId=*
+// @include     https://confluence.*/display/*
+// @include     https://confluence.*/pages/viewpage.action?pageId=*
+// @include     http://confluence.*/display/*
+// @include     http://confluence.*/pages/viewpage.action?pageId=*
 // @grant       none
 // @author      Adam Katz
-// @version     1
+// @version     2.0.0.20180113
 // @copyright   2016+ by Adam Katz
 // @license     GPL
 // @licstart    The following is the entire license notice for this script.
@@ -25,11 +31,28 @@
 // @licend      The above is the entire license notice for this script.
 // ==/UserScript==
 
-// more info at https://stackoverflow.com/a/35853814/519360
-if (typeof AJS === 'function') {
-  AJS.toInit(function(){
-    if (AJS.$("div.ia-fixed-sidebar").width() > 55){
-      AJS.Confluence.Sidebar.toggle();
-    }
-  });
+if (document.body.id.indexOf("com-atlassian-confluence") >= 0) {
+
+  // Collapse sidebar by default
+  // More info at https://stackoverflow.com/a/35853814/519360
+  if (typeof AJS === 'function') {
+    AJS.toInit(function(){
+      if (AJS.$("div.ia-fixed-sidebar").width() > 55){
+        AJS.Confluence.Sidebar.toggle();
+      }
+    });
+  }
+
+  // Add extra CSS
+  var style = document.createElement("style");
+  style.type = "text/css";
+  style.textContent = /* syn=css */ `
+
+    /* Slightly gray weekends on calendar views */
+    tr.fc-week .fc-sat, tr.fc-week .fc-sun { background-color: #fafafa; }
+
+  `;
+  document.head.appendChild(style);
+
 }
+
