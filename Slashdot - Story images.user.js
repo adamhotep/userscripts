@@ -7,7 +7,7 @@
 // @author	Adam Katz <scriptsATkhopiscom>
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.1.0.20180113
+// @version	2.1.1.20180127
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -171,7 +171,7 @@ function getContent(text) {
 }
 
 // get images directly from HTML body
-function getImage(code, tag, ext) {
+function getImage(code, tag, ext="") {
   var blacklist = [
     'https://lauren.vortex.com/lauren.jpg',
     '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
@@ -187,8 +187,7 @@ function getImage(code, tag, ext) {
   var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
   var Q = `[^\'\"]`;	// "' // non-quotes character
   if (tag == "a") { src = "href"; }
-  if (typeof ext === "undefined") { ext = ""; }
-  else { ext = '\\.' + ext; }
+  if (ext) { ext = '\\.' + ext; }
   var regex = new RegExp(
     `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+${ext}${extra})${q}`,
     "i");
@@ -338,17 +337,16 @@ function onNewArticle(article) {
 }
 
 
-var magnifier = "data:image/svg+xml," + /* SVG from Wikipedia, syn=xml */
-  `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
-   <svg xmlns='http://www.w3.org/2000/svg' width='15' height='11'
-        viewBox='0 0 11 15'>
-     <g fill='#fff' stroke='#366'>
-       <path d='M1.509 1.865h10.99v7.919h-10.99z'/>
-       <path d='M-1.499 6.868h5.943v4.904h-5.943z'/>
+// SVG lacks `<?xml version="1.0" encoding="UTF-8" standalone="no"?>`
+// because that doesn't escape right and I don't want to unescape just the `?`
+var magnifier = "data:image/svg+xml," + escape(/* SVG from Wikipedia, syn=xml */
+  `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="11"
+        viewBox="0 0 11 15">
+     <g fill="#fff" stroke="#366">
+       <path d="M1.509 1.865h10.99v7.919h-10.99z"/>
+       <path d="M-1.499 6.868h5.943v4.904h-5.943z"/>
      </g>
-   </svg>`
-  .replace(/</g, "%3C").replace(/>/g, "%3E")   // escape() would do too much
-  .replace(/\n/g, "%0A").replace(/#/g, "%23"); // encodeURI() would do too much
+   </svg>`);
 
 // BUG: images w/ widths determined by max-height can have captions from titles
 // that are truncated to the max-width rather than the smaller actual width
