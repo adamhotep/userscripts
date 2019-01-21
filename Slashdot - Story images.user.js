@@ -4,10 +4,10 @@
 // @description	Adds zoomable thumbnail for each story link
 // @include	https://slashdot.org/*
 // @include	https://*.slashdot.org/*
-// @author	Adam Katz <scriptsATkhopiscom>
+// @author	Adam Katz
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.1.1.20180127
+// @version	2.1.3.20180717
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -176,20 +176,22 @@ function getImage(code, tag, ext="") {
     'https://lauren.vortex.com/lauren.jpg',
     '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
   ];
-  var skip = `(?!${blacklist.join("|").replace(/\./g, "\\.")}|[^\'\">]*`
-           +   `(?:`
-           +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|n)|logo`
-           +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
-           +     `|[^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b`
-           +   `))`;
   var extra = `(?:[?&\\/#][^\'\"]*)?`;
   var src = "src";
   var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
   var Q = `[^\'\"]`;	// "' // non-quotes character
   if (tag == "a") { src = "href"; }
   if (ext) { ext = '\\.' + ext; }
+  var skip_attr = `(?![^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b)`;
+  var skip_src = `(?!`
+               +   `${blacklist.join("|").replace(/\./g, "\\.")}`
+               +   `|[^>\'\"]{0,999}(?:`
+               +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|[n_0-9])|logo`
+               +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
+               +   `))`;
+  //console.log("skip_src:\n" + skip_src);
   var regex = new RegExp(
-    `<${tag}\\b[^>]*\\s${src}=${q}${skip}(${Q}+${ext}${extra})${q}`,
+    `<${tag}\\b${skip_attr}[^>]{0,999}\\s${src}=${q}${skip_src}(${Q}+${ext}${extra})${q}`,
     "i");
   var match = code.match(regex);
   if (match) { return match[1]; }
@@ -225,7 +227,7 @@ function onNewArticle(article) {
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
     href = q$(`div.p > i a[rel][href]`, article);
-    if (! href ) { href = q$(`div.p > i a[href])`, article); }
+    if (! href ) { href = q$(`div.p > i a[href]`, article); }
     if (! href || ! href.href) { return; }
   }
 
@@ -287,7 +289,7 @@ function onNewArticle(article) {
       );
       if (! image) {
         image = html.match(	// other meta content images, esp. "og:image"
-          /<meta\b(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
+          /<meta\b[^>]*(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
         );
       }
       if (! image) {
@@ -295,7 +297,8 @@ function onNewArticle(article) {
           /<meta\b[^>]*\scontent=['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
-          if (image && ! image.match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
+          // image.match isn't always a function(!?) so make sure it is a funciton first
+          if (image && image.match && ! image.match(/tile|ico(?:\b|[n_0-9])/i) ) { break; }
           image = null; 	// reset since an exclusion triggered
         }
       }
@@ -315,7 +318,7 @@ function onNewArticle(article) {
       if (! image) { return; }
       if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
-          image = href.href.match(/^https?:\/\/[^\/:?#]*/) + image;
+          image = href.href.match(/^https?:\/\/[^\/:?#]+/) + image;
         } else {					// fully relative
           image = href.href.replace(/\/[^\/]*$/, "/" + image);
         }
