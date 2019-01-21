@@ -3,15 +3,14 @@
 // @namespace      https://github.com/adamhotep/userscripts
 // @description    Colors the passwd field green if secure, red if not
 // @include        *
-// @grant          none
-// @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/secure-cube-green.png
+// @grant          GM_addStyle
+// @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/icons/Generic%20-%20Green%20SSL%20Password%20Fields.png
 // @author         Adam Katz
-// @version        0.6+20170910
-// @copyright      2010+ by Adam Katz
-// @license        GPL v3
-// @licstart       The following is the entire license notice for this script.
+// @version        0.7.0.20190117
+// @license        GPL
+// ==/UserScript==
 /* 
- * Copyright (C) 2010-2016  Adam Katz
+ * Copyright (C) 2010+ by Adam Katz, Licensed under the GPL 3+
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of version 3 of the GNU General Public License as published
@@ -22,8 +21,6 @@
  *
  * Beerware: If you think this is worth it, you are welcome to buy me a beer.
  */ 
-// @licend         The above is the entire license notice for this script.
-// ==/UserScript==
 
 var ssl_bg   = "#cfb";  // green background for SSL-protected password fields
 var plain_bg = "#fcb";  // red background for non-SSL-protected password fields
@@ -31,29 +28,32 @@ var plain_bg = "#fcb";  // red background for non-SSL-protected password fields
 var rel_ssl = rel_plain = '';
 var pw_field = 'input[type="password"]';
 
-function addStyle(content) {
-  var style = document.createElement("style");
-  style.type = "text/css";
-  style.appendChild(document.createTextNode(content));
-  var head = document.getElementsByTagName("head");
-  if (head && head[0]) {
-    head = head[0];
-  } else {
-    head = document.body;
+/// define GM_addStyle if necessary {{{
+if (typeof GM_addStyle == 'undefined') {
+  function GM_addStyle(css) {
+    'use strict';
+    let head = document.head;
+    if (head) {
+      let style = document.createElement("style");
+      style.type = "text/css";
+      style.textContent = css;
+      head.appendChild(style);
+      return style;
+    }
+    return null;
   }
-  head.appendChild(style);
-}
+} // end GM_addStyle }}}
 
 function pwcss(sel, rgb) {
-  return sel + pw_field + ' { color:#000; background:' + rgb + '!important }\n';
+  return `${sel} ${pw_field} { color:#000; background:${rgb}!important; }\n`;
 }
 
 if (location.protocol == "https:") { rel_ssl   = pw_field + ", "; }
 else                               { rel_plain = pw_field + ", "; }
 
-addStyle(
-  pwcss(rel_ssl   + 'form[action^="https://"] ', ssl_bg) +
-  pwcss(rel_plain + 'form[action^="http://"] ', plain_bg)
+GM_addStyle(
+  pwcss(rel_ssl   + `form[action^="https://"]`,  ssl_bg) +
+  pwcss(rel_plain + `form[action^="http://"]`, plain_bg)
 );
 
 var forms = document.getElementsByTagName("form");
