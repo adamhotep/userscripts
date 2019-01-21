@@ -8,9 +8,8 @@
 // @include       https://xkcd.com/*
 // @include       https://www.xkcd.com/*
 // @grant         GM_addStyle
-// @version       1.4.0.20190121
-// @copyright     2009+ by Adam Katz
-// @license       AGPL v3+
+// @version       1.4.1.20190121
+// @license       AGPL
 // ==/UserScript==
 
 /* 
@@ -113,8 +112,8 @@ if (comic_imgs) {
       }
     };
 
+    window.addEventListener("keydown", onKeyDown, false);
   };
-  window.addEventListener("keydown", onKeyDown, false);
 
   css += /* syn=css */ `
 
