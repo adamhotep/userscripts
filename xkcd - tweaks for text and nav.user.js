@@ -8,11 +8,18 @@
 // @include       https://xkcd.com/*
 // @include       https://www.xkcd.com/*
 // @grant         GM_addStyle
-// @version       1.4.1.20190121
+// @version       1.4.2.20190121
 // @license       AGPL
 // ==/UserScript==
 
 /* 
+ * Features:
+ *   - Keyboard navigation:
+ *     - left arrow: previous comic
+ *     - right arrow: next comic
+ *     - enter: view rollover text (like hovring the mouse over the comic)
+ *   - Archive listing shows publication dates and what you've viewed so far
+ *
  * Copyright (C) 2009+  Adam Katz
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -52,12 +59,13 @@ var css = "";
 var comic_imgs = document.querySelectorAll(`#comic img[title]`);
 if (comic_imgs) {
 
+  document.body.classList.add("notxt");
+
   // add rollover text
   for (let i = 0, il = comic_imgs.length; i < il; i++) {
     let comicText = document.createElement("div");
     comicText.appendChild(document.createTextNode(comic_imgs[i].title))
-    comicText.id = "comicText";
-    comicText.classList.add("dont_display");
+    comicText.classList.add("comicText");
 
     comic_imgs[i].removeAttribute("title");
 
@@ -67,7 +75,7 @@ if (comic_imgs) {
     // no cheating:  can't be triggered until image loads (dude, nice modem!)
     comic_imgs[i].addEventListener("load", function() {
         this.onmouseover = function() {
-          comicText.classList.remove("dont_display");
+          document.body.classList.remove("notxt");
           this.onmouseover = null;
         };
       }, true);
@@ -107,7 +115,7 @@ if (comic_imgs) {
         case "?":
         case "Enter":
         case "Escape":
-          comicText.classList.toggle("dont_display");
+          document.body.classList.toggle("notxt");
           break;
       }
     };
@@ -117,9 +125,10 @@ if (comic_imgs) {
 
   css += /* syn=css */ `
 
-    #comicText		{ color:gray; padding:1ex; letter-spacing:-0.01em;
-    			  font:small-caps 1.4rem "Comic Sans MS",sans-serif; }
-    .dont_display	{ display:none; }
+    .comicText		{ color:gray; padding:1ex; letter-spacing:-0.01em;
+    			  font:small-caps 1.4rem
+    			    "Comic Sans MS", "Comic Neue", sans-serif; }
+    .notxt .comicText	{ display:none; }
 
   `;
 
