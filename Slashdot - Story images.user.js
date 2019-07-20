@@ -7,7 +7,7 @@
 // @author	Adam Katz
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.1.3.20180717
+// @version	2.1.5.20190608
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -170,12 +170,14 @@ function getContent(text) {
   return null;
 }
 
+var blacklist = [
+  'https://lauren.vortex.com/lauren.jpg',
+  '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png',
+  '(?:https://(?:[\\w.-]+.)?reutersmedia.net)?/resources_v2/images/rcom-default.png'
+].join("|").replace(/\./g, "\\.");
+
 // get images directly from HTML body
 function getImage(code, tag, ext="") {
-  var blacklist = [
-    'https://lauren.vortex.com/lauren.jpg',
-    '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png'
-  ];
   var extra = `(?:[?&\\/#][^\'\"]*)?`;
   var src = "src";
   var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
@@ -184,7 +186,7 @@ function getImage(code, tag, ext="") {
   if (ext) { ext = '\\.' + ext; }
   var skip_attr = `(?![^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b)`;
   var skip_src = `(?!`
-               +   `${blacklist.join("|").replace(/\./g, "\\.")}`
+               +   `${blacklist}`
                +   `|[^>\'\"]{0,999}(?:`
                +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|[n_0-9])|logo`
                +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
@@ -304,6 +306,9 @@ function onNewArticle(article) {
       }
       image = getContent(image);
 
+      // another blacklist needed for Reuters, who uses their logo as their card
+      if (image.match(RegExp(`^(?:${blacklist})`))) { image = ''; }
+
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
       // trim wordpress down to just the actual story content
@@ -324,7 +329,7 @@ function onNewArticle(article) {
         }
       }
 
-      image = image.replace(/&amp;/g, "&");
+      image = image.replace(/&(amp|#0*38|#x0*26);/g, "&");
 
       var thumb = mkthumb(image, youtube);
       if (desc) { thumb.title = desc; }
