@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name	Stack Overflow - UI Tweaks
 // @namespace	https://github.com/adamhotep/userscripts
-// @description	Widen code blocks on mouse hover, shrink duplicate questions
+// @description	Blue<->red user badges by reputation, wide code, hide flagged Qs
 // @include	https://stackoverflow.com/*
 // @include	https://serverfault.com/*
 // @include	https://superuser.com/*
@@ -26,15 +26,16 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.0+20161007
+// @version	1.1.0.20190720
 // @author	Adam Katz
-// @copyright	2016, Adam Katz <https://stackexchange.com/users/674651>
-// @license	ISC; http://opensource.org/licenses/ISC
 // @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
 // ==/UserScript==
 
-// Copyright (C) 2016 by Adam Katz
+// Copyright (C) 2016+ by Adam Katz, https://stackexchange.com/users/674651
+// License details: {{{
+//
+// ISC License: http://opensource.org/licenses/ISC
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -57,14 +58,103 @@
 // it within the Stack Exchange codebase, with or without credit to the authors.
 // This permission grant does not extend to any code written by third parties,
 // unless said parties also agree to it.
+// }}}
 
-var css = "";
+// helpers {{{
+
+// Returns object(s) matched as queried via CSS
+// q$(css)           =>  document.querySelector(css)
+// q$(css, elem)     =>  elem.querySelector(css)
+// q$(css, true)     =>  document.querySelectorAll(css)
+// q$(css, elem, 1)  =>  elem.querySelectorAll(css)
+function q$(css, up = document, all = 0) { // by Adam Katz, github.com/adamhotep
+  if (all === 0 && typeof up != "object") { all = up; up = document; }
+  if (all) { return up.querySelectorAll(css); }
+  else     { return up.querySelector(css); }
+}
+
+// Stylesheet for tweaks
+var style = document.createElement("style");
+style.type = "text/css";
+style.textContent = "";
+document.head.appendChild(style);
+function addStyle(css) { style.textContent += css; }
+
+// end helpers }}}
+
+// color user badges by how high their score is {{{
+var user_info = q$(`.user-info`, 1);
+if (user_info) {
+  addStyle(`
+    .reputation_color { text-shadow: 0 0 .1em white; border-radius:.6em; }
+    .reputation_color:hover {
+      background-color:transparent!important;
+      transition:background-color 1s;
+    }
+    .post-signature { border:2px solid transparent; }
+    .owner { border-radius:.6em; border-color:#88f; }
+  `);
+}
+for (let u = 0, ul = user_info.length; u < ul; u++) {
+  let box = user_info[u].parentElement;
+  // badge pages shouldn't go to the parent
+  if (box.classList.contains("single-badge-count")) {
+    box = user_info[u];
+  }
+  let rep = q$(`.reputation-score`, box);
+  if (! rep) { continue; }
+  if (rep.title && rep.title.match(/score\s[0-9][0-9,]+/))
+       rep = rep.title;
+  else rep = rep.innerText;
+  rep = rep.replace(/[^0-9]+/g, "");
+  if (isNaN(rep)) { continue; }
+
+  let hue = Math.log2(rep);
+  let saturation = 60;
+  // 2^17 = 131k (top 469 all-time as of Jul 2019), so we'll make that 100% red
+  // and then turn up saturation for top performers like Jon Skeet (#1).
+  // Skeet's 1113k gets us 91%. Note 999% is treated as 100%, so no cap needed.
+  // Superuser (2nd biggest SE site)'s #1 275k, Math.SE's #1 is 465k
+  if (hue > 17) {
+    saturation = Math.round(saturation + (hue - 17) * 10);
+    hue = 17;
+  }
+  hue = Math.round(hue / 17 * 180 + 180);
+
+  hsla = `hsla(${hue}, ${saturation}%, 50%, 0.2)`;
+  box.style.backgroundColor = hsla;
+  //console.log(`${u} rep=${rep}\t${hsla}\t${box.style.backgroundColor}`);
+
+  box.classList.add("reputation_color");
+
+  /* previous attempt used privilege tiers and then exponents
+  let priv_tier = 0;
+
+  // This uses https://stackoverflow.com/help/privileges and then powers of two
+  // to determine the "privilege tier" which will dictate color.
+  //
+  // 2^15 = 32k, 2^16 = 66k, 2^17 = 131k, 2^18 = 262k.
+  // At this time, the 500th best (all time) has 125k reputation.
+  // The 100th best has 306k, the 148th has 263k, and the 469th has 131k.
+  [ 1, 5, 10, 15, 20, 50, 75, 100, 125, 200, 250, 500, 1000,
+    1500, 2000, 2500, 3000, 5000, 10000, 15000, 20000, 25000, // end of privs
+    2**15, 2**16, 2**17, 2**18
+  ].forEach( function(p) {
+    if (rep >= p) priv_tier++;
+  });
+
+  // We're using a 26-point blue-to-black-to-red themometer here
+  box.style.backgroundColor = `hsl(${priv_tier/26*180+180}, 60%, 50%)`;
+  */
+
+}
+// done coloring user badges by score }}}
 
 // code block hover-to-widen {{{
-var code_blocks = document.querySelectorAll("div.post-text pre");
+var code_blocks = q$(`div.post-text pre`, 1);
 if (code_blocks) {
 
-  css += /* syn=css */ `
+  addStyle(`
 
     /* Ensure links in code are only barely distinguishable until hovered.
      * Uses a CSS filter b/c StackExchange sites use different color schemes */
@@ -77,7 +167,7 @@ if (code_blocks) {
     }
 
     .post-text pre.wider:hover {
-      background-color:rgba(236,236,236,0.92); /* a tiny bit of transparency */
+      background-color:#eeee; /* a tiny bit of transparency */
       position:relative; z-index:9; /* don't disrupt later elements */
       /* This previously used overflow-x:scroll but box-sizing:border-box fails
        * to account for the scrollbar even though it was previously present,
@@ -86,8 +176,8 @@ if (code_blocks) {
       box-sizing: border-box; /* fails to count scroll bar.  Firefox BUG? */
       width:-moz-fit-content; width:-webkit-fit-content; width:fit-content;
 
-      /* BUG: this breaks the window resizes */
-      max-width:` + document.body.clientWidth + `px;
+      /* BUG: this breaks on window resizes */
+      max-width:${document.body.clientWidth}px;
     }
     .post-text pre.wider.widest {
       position:relative;
@@ -95,11 +185,12 @@ if (code_blocks) {
     .post-text pre.wider.widest:hover {
       left:0!important; /* enable offset correction in js code */
       overflow-x:auto;  /* this MIGHT require scroll and/or !important */
+      z-index:1001;	/* On top of .left-sidebar { z-index:1000 } */
     }
     code {
       font-family: Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,Consolas,Menlo,Liberation Mono,monospace;
     }
-  `;
+  `);
 
 
   ///// Designate which code blocks need to grow and by how much
@@ -114,9 +205,9 @@ if (code_blocks) {
     var width = code_blocks[c].scrollWidth;
     var offset = code_blocks[c].getBoundingClientRect().x;
     if (width && width > code_blocks[c].clientWidth) {
-      code_blocks[c].className += " wider";
+      code_blocks[c].classList.add("wider");
       if (offset + width > document.body.clientWidth) {
-        code_blocks[c].className += " widest";
+        code_blocks[c].classList.add("widest");
         // marginLeft and marginRight shift everything to the left edge
         // left moves it back to the right, except on :hover (see CSS)
         // therefore the element will be full window width
@@ -129,11 +220,9 @@ if (code_blocks) {
 
 } // Done with code blocks }}}
 
-
 // collapse flagged questions when viewing > 15 questions {{{
 // (closed, on hold, dupe, etc) https://meta.stackexchange.com/q/10582/259816
-var questions = document.querySelectorAll(
-  `#questions a[href].question-hyperlink`);
+var questions = q$(`#questions a[href].question-hyperlink`, 1);
 var add_question_css = false;
 for (let q = 0, ql = questions.length; ql > 15 && q < ql; q++) {
   if (questions[q].innerText.match(
@@ -158,19 +247,12 @@ for (let q = 0, ql = questions.length; ql > 15 && q < ql; q++) {
 }
 if (add_question_css) {
   let qs = "#questions .question-summary.skip";
-  css += /* syn=css */ `
+  addStyle(`
     ${qs}:not(.open)			{ height:1.5em; }
     ${qs} .expandor::before		{ color:#59c; }
     ${qs}:not(.open) .expandor::before	{ content:"(expand)"; cursor:zoom-in; }
     ${qs}.open .expandor::before	{ content:"(shrink)"; cursor:zoom-out; }
-  `;
+  `);
 }
 // Done collapsing flagged questions }}}
-
-
-// Add CSS
-var stylesheet = document.createElement("style");
-stylesheet.type = "text/css";
-stylesheet.appendChild(document.createTextNode(css));
-document.head.appendChild(stylesheet);
 
