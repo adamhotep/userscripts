@@ -6,7 +6,7 @@
 // @grant          GM_addStyle
 // @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/icons/Generic%20-%20Green%20SSL%20Password%20Fields.png
 // @author         Adam Katz
-// @version        0.7.0.20190117
+// @version        0.7.1.20190720
 // @license        GPL
 // ==/UserScript==
 /* 
@@ -22,11 +22,11 @@
  * Beerware: If you think this is worth it, you are welcome to buy me a beer.
  */ 
 
-var ssl_bg   = "#cfb";  // green background for SSL-protected password fields
-var plain_bg = "#fcb";  // red background for non-SSL-protected password fields
+const ssl_bg   = "#afb";  // green background for password fields with SSL
+const plain_bg = "#fcb";  // red background for password fields without SSL
 
+const pw_field = 'input[type="password"]';
 var rel_ssl = rel_plain = '';
-var pw_field = 'input[type="password"]';
 
 /// define GM_addStyle if necessary {{{
 if (typeof GM_addStyle == 'undefined') {
@@ -62,8 +62,8 @@ var forms = document.getElementsByTagName("form");
 if (! location.host.match(/(?:^|\.)(?:delta\.com)$/)) {
   // For each form, on each password field, note the domain it submits to
   // (unless it's the same domain as the current page).  TODO: strip subdomains?
-  for (var f=0, fl=forms.length; f < fl; f++) {
-    var target;
+  for (let f=0, fl=forms.length; f < fl; f++) {
+    let target;
     if (!forms[f].action || !forms[f].action.match) {
       // defaults for forms without actions -> assume JavaScript
       target = [ (location.protocol == "https:") , "javascript" ];
@@ -71,12 +71,12 @@ if (! location.host.match(/(?:^|\.)(?:delta\.com)$/)) {
       target = forms[f].action.match(/^http(s?):..([^\/]+)/i);
     }
 
-    var pws = forms[f].querySelectorAll('input[type="password"]');
+    let pws = forms[f].querySelectorAll('input[type="password"]');
 
     if (pws.length < 1 || !target || !target[2]) { continue; }
 
     // Report when domain doesn't match
-    var is_secure = " will be sent to <" + target[2] + ">";
+    let is_secure = " will be sent to <" + target[2] + ">";
     if (location.host == target[2]) { is_secure = ""; }
 
     if ( target[2].match(/^javascript(?![^:])/) ) {
@@ -87,8 +87,8 @@ if (! location.host.match(/(?:^|\.)(?:delta\.com)$/)) {
       is_secure = "INSECURE password" + is_secure;
     }
 
-    for (var p=0, pl=pws.length; p < pl; p++) {
-      var field = pws[p];
+    for (let p=0, pl=pws.length; p < pl; p++) {
+      let field = pws[p];
 
       // target is SSL, same host, & already has a rollover title -> never mind
       if (target[1] && target[2] == location.host && field.title) {
