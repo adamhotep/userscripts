@@ -4,7 +4,7 @@
 // @namespace   https://github.com/adamhotep/userscripts
 // @description User pages: Stats over time, power (tweets/follower)
 // @include     https://twitter.com/*
-// @version     1.0.0.20181215
+// @version     1.1.0.20190720
 // @installURL  https://github.com/adamhotep/userscripts/raw/master/Twitter_-_User_tweets_per_day.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Twitter_-_User_tweets_per_day.user.js
 // @grant       GM_addStyle
@@ -147,14 +147,21 @@ if (join) {
       make_stat("influence", "Influence", "Followers/Following", influence);
     }
 
-    // power is log-linear fans to tweets:
-    //   log(fans) * fans / max(tweets, 1)
-    var power = fans;
-    if (tweets > 1) { power /= tweets; }
-    power = Math.log(tweets) * power;
-    if (power) {
-      make_stat("power", "Power", "log(Fans)×Fans/Tweet", power);
+    // power is log-linear fans to tweets (with alternates for zero counts):
+    //   if (tweets > 0 && fans > 0)       power = log(fans) * fans / tweets
+    //   else if (fans > 0 && likes > 10)  power = log(fans) * fans * 10 / likes
+    //   else if (fans > 0)                power = log(fans)
+    //   else if (tweets == fans == 0)     power = 0
+    //   else if (tweets > 0)              power = log(1 / tweets)
+    var power = 0;
+    if (fans > 0) {
+      power = Math.log(fans);
+      if (tweets > 0) { power *= fans / tweets; }
+      else if (likes > 10) { power *= fans * 10 / likes; } // 10 likes ~ 1 tweet
+    } else if (tweets > 0) {
+      power = Math.log(1 / tweets);	// more tweets w/out fans? more negative
     }
+    make_stat("power", "Power", "log(Fans)×Fans/Tweet", power);
 
   }
 
