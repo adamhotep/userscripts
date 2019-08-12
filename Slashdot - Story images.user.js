@@ -2,115 +2,32 @@
 // @name	Slashdot - Article images
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Adds zoomable thumbnail for each story link
+// @author	Adam Katz
 // @include	https://slashdot.org/*
 // @include	https://*.slashdot.org/*
-// @author	Adam Katz
+// @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.1.5.20190608
+// @version	2.2.0.20190812
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
-// Copyright 2009+ by Adam Katz, GPL v3+ except for waitForKeyElements
-// waitForKeyElements is copyright BrockA and licensed CC BY-NC-SA 4.0
-// all changes tracked to adamhotep on github are also (dual-) licensed GPL v2+
 
-// previously had  @require https://git.io/waitForKeyElements.js
-// but Greasemonkey 4.0 cannot incorporate Github gists due to
-// https://github.com/greasemonkey/greasemonkey/issues/2631 so here it is:
+// Copyright 2009+ by Adam Katz, GPL v3+ {{{
 //
-// waitForKeyElements was originally https://gist.github.com/BrockA/2625891
-// and modified to work without jQuery by me (see above git.io link).
-function waitForKeyElements (	// {{{
-    selectorTxt,    /* Required: The querySelector string that
-                        specifies the desired element(s).
-                    */
-    actionFunction, /* Required: The code to run when elements are
-                        found. It is passed the matched element.
-                    */
-    bWaitOnce,      /* Optional: If false, will continue to scan for
-                        new elements even after the first match is
-                        found.
-                    */
-    iframeSelector  /* Optional: If set, identifies the iframe to
-                       search.
-                    */
-) {
-    var targetNodes, btargetsFound;
-
-    //--- Additionally avoid what we've found
-    var selectorClean = selectorTxt.replace(/(,)|$/g, ":not([wfke_found])$1");
-
-    if (typeof iframeSelector == "undefined")
-        targetNodes     = document.querySelectorAll(selectorClean);
-    else {
-        targetNodes = [];
-        var iframe = document.querySelectorAll(iframeSelector);
-        for (var i = 0, il = iframe.length; i < il; i++) {
-            var nodes = iframe[i].querySelectorAll(selectorClean);
-            if (nodes) targetNodes.concat(nodes);
-        }
-    }
-
-    if (targetNodes  &&  targetNodes.length > 0) {
-        btargetsFound   = true;
-        //--- Found target node(s).  Go through each and act if they are new.
-        for (var t = 0, tl = targetNodes.length; t < tl; t++) {
-
-            if (!targetNodes[t].getAttribute("wfke_found")) {
-                //--- Call the payload function.
-                var cancelFound = false;
-                try {
-                    cancelFound     = actionFunction (targetNodes[t]);
-                }
-                //--- Log errors to console rather than stopping altogether
-                catch (error) {
-                    var name = actionFunction.name;
-                    if (name)
-                        name = 'in function "' + name + '":\n';
-                    console.log ("waitForKeyElements: actionFunction error\n"
-                        + name + error);
-                }
-                if (cancelFound)
-                    btargetsFound   = false;
-                else
-                    targetNodes[t].setAttribute("wfke_found", true);
-            }
-        }
-    }
-    else {
-        btargetsFound   = false;
-    }
-
-    //--- Get the timer-control variable for this selector.
-    var controlObj      = waitForKeyElements.controlObj  ||  {};
-    var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
-    var timeControl     = controlObj [controlKey];
-
-    //--- Now set or clear the timer as appropriate.
-    if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
-        //--- The only condition where we need to clear the timer.
-        clearInterval (timeControl);
-        delete controlObj [controlKey]
-    }
-    else {
-        //--- Set a timer, if needed.
-        if ( ! timeControl) {
-            timeControl = setInterval ( function () {
-                    waitForKeyElements (    selectorTxt,
-                                            actionFunction,
-                                            bWaitOnce,
-                                            iframeSelector
-                                        );
-                },
-                300
-            );
-            controlObj [controlKey] = timeControl;
-        }
-    }
-    waitForKeyElements.controlObj   = controlObj;
-} // }}}
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>. }}}
 
 //// Greasemonkey 4 changed a lot. Here are some GM 3->4 compatibilty shims. {{{
 
@@ -138,18 +55,30 @@ if (typeof GM_addStyle == 'undefined') {
 
 //// }}} end GM compatibility shims
 
+function debug(text) { return true; }
+//function debug(text) { console.log(text); }
+
+debug("starting Slashdot Article Images");
+
+
 waitForKeyElements( /* syn=css */
   `article.article:not([sai-done]):not([style*="margin-bottom"])`,
   onNewArticle);
 
-// some short-hand
-function q$(css, up=document) {
-  return up.querySelector(css);
+// Returns object(s) matched as queried via CSS
+// q$(css)           =>  document.querySelector(css)
+// q$(css, elem)     =>  elem.querySelector(css)
+// q$(css, true)     =>  document.querySelectorAll(css)
+// q$(css, elem, 1)  =>  elem.querySelectorAll(css)
+function q$(css, up = document, all = 0) { // by Adam Katz, github.com/adamhotep
+  if (all === 0 && typeof up != "object") { all = up; up = document; }
+  if (all) { return up.querySelectorAll(css); }
+  else     { return up.querySelector(css); }
 }
 
 // render text as HTML, convert to text, unescape items, remove remaining tags
 function fromHTML(text) {
-  var html = document.createElement("div");
+  let html = document.createElement("div");
   html.innerHTML = text;
   return html.innerText
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">")	// fix 2x-escaped tags
@@ -161,7 +90,7 @@ function fromHTML(text) {
 function getContent(text) {
   if (! text) return null;
   text = text.toString();
-  var content = text.match(/\s(?:content|src)="([^"]*)"/);	// double quotes
+  let content = text.match(/\s(?:content|src)="([^"]*)"/);	// double quotes
   if (content) return content[1];
   content = text.match(/\s(?:content|src)='([^']*)'/);		// single quotes
   if (content) return content[1];
@@ -170,38 +99,40 @@ function getContent(text) {
   return null;
 }
 
-var blacklist = [
+// This builds a regular expression - see also the css in art_blacklist
+var img_blacklist = [
   'https://lauren.vortex.com/lauren.jpg',
+  '(?:https://slashdot.org)?/~.*',	// is this really for an IMAGE blacklist?
   '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png',
   '(?:https://(?:[\\w.-]+.)?reutersmedia.net)?/resources_v2/images/rcom-default.png'
 ].join("|").replace(/\./g, "\\.");
 
 // get images directly from HTML body
 function getImage(code, tag, ext="") {
-  var extra = `(?:[?&\\/#][^\'\"]*)?`;
-  var src = "src";
-  var q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
-  var Q = `[^\'\"]`;	// "' // non-quotes character
+  let extra = `(?:[?&\\/#][^\'\"]*)?`;
+  let src = "src";
+  let q = `[\'\"]`;	// "' // quotes (breaks syntax higlighting)
+  let Q = `[^\'\"]`;	// "' // non-quotes character
   if (tag == "a") { src = "href"; }
   if (ext) { ext = '\\.' + ext; }
-  var skip_attr = `(?![^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b)`;
-  var skip_src = `(?!`
-               +   `${blacklist}`
-               +   `|[^>\'\"]{0,999}(?:`
-               +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|[n_0-9])|logo`
-               +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
-               +   `))`;
-  //console.log("skip_src:\n" + skip_src);
-  var regex = new RegExp(
+  let skip_attr = `(?![^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b)`;
+  let skip_src
+    = `(?!`
+    +   img_blacklist
+    +   `|[^>\'\"]{0,999}(?:`
+    +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|[n_0-9])|logo`
+    +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
+    + `))`;
+  let regex = new RegExp(
     `<${tag}\\b${skip_attr}[^>]{0,999}\\s${src}=${q}${skip_src}(${Q}+${ext}${extra})${q}`,
     "i");
-  var match = code.match(regex);
+  let match = code.match(regex);
   if (match) { return match[1]; }
   return ""; // not found
 }
 
 function embedYoutube(target) {
-  var iframe = document.createElement("iframe");
+  let iframe = document.createElement("iframe");
   iframe.src = 'https://www.youtube-nocookie.com/embed/' + target;
   iframe.frameBorder = 0;
   iframe.allowFullscreen = true;
@@ -210,11 +141,11 @@ function embedYoutube(target) {
 }
 
 // make the thumb (returns the thumb, append the link to it)
-function mkthumb(image, video=null) {
-  var thumb = document.createElement("div");
+function mkthumb(src, video=null) {
+  let thumb = document.createElement("div");
   if (video) { thumb.appendChild(video); }
-  var img = document.createElement("img");
-  img.src = image;
+  let img = document.createElement("img");
+  img.src = src;
   thumb.appendChild(img);
   thumb.setAttribute("onclick", /* syn=js */
     `this.classList.toggle("zoomed")`);
@@ -224,27 +155,59 @@ function mkthumb(image, video=null) {
 
 function onNewArticle(article) {
   article.setAttribute("sai-done", "true");
-  var body = q$(`div.body`, article);
-  var href = q$(`a.story-sourcelnk, a.submission-sourcelnk`, article);
+
+  // This builds a CSS selector
+  // it is scope-limited somehow (didn't work when put at top level)
+  var art_blacklist = ':not(' + [
+    '[rel="tag"]',
+    '[href^="https://slashdot.org/"]',
+    '[href*=".slashdot.org/story/"]',
+  ].join('):not(') + ')';
+
+  let body = q$(`div.body`, article);
+  let href = q$(`a.story-sourcelnk${art_blacklist},
+                 a.submission-sourcelnk${art_blacklist}
+    `, article);
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
-    href = q$(`div.p > i a[rel][href]`, article);
-    if (! href ) { href = q$(`div.p > i a[href]`, article); }
-    if (! href || ! href.href) { return; }
+    href = q$(`div.p > i a[href]${art_blacklist}`, article);
+    if (! href ) { href = q$(`div.p > i a[href]${art_blacklist}`, article); }
+    if (! href ) { href = q$(`div.p a[href]${art_blacklist}`, article); }
+    if (! href || ! href.href) { debug("new article not found"); return; }
   }
+  debug("new article: " + href);
 
   // direct youtube link
   // TODO: playlists? hints at https://stackoverflow.com/a/30419360/519360 #2
-  var youtube = href.href.match(
+  let youtube = href.href.match(
     /^https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=)|youtu\.be\/)([\w-]{5,})/
   );
+  // indirect youtube link
+  var youtube_embed = "";
+  if (!youtube) {
+    youtube_embed = q$(`
+      div.p a[href^="https://youtube.com/watch?"],
+      div.p a[href^="https://youtu.be/"],
+      div.p a[href^="http://youtu.be/"],
+      div.p a[href^="https://youtube-nocookie.com/watch?"],
+      div.p a[href^="http://youtube.com/watch?"],
+      div.p a[href^="http://youtube-nocookie.com/watch?"]
+    `, article);
+    if (youtube_embed) {
+      youtube_embed = youtube_embed.href.match(
+        /(?:embed\/|watch\?(?:.*&)?v=|youtu\.be\/)([\w-]{5,})/
+      );
+      if (youtube_embed) { youtube_embed = youtube_embed[1]; }
+      debug("youtube_embed (in /. article): " + youtube_embed);
+    }
+  }
   if (youtube) {
-    var image = "https://i.ytimg.com/vi/" + youtube[1] + "/mqdefault.jpg";
-    var youtu = "https://youtu.be/" + youtube[1];
+    let image = "https://i.ytimg.com/vi/" + youtube[1] + "/mqdefault.jpg";
+    let youtu = "https://youtu.be/" + youtube[1];
     youtube = embedYoutube(youtube[1]);
     if (youtube && body.insertBefore(youtube, body.children[0])) {
-      var thumb = mkthumb(image, youtube);
-      var thumb_link = href.cloneNode(true);
+      let thumb = mkthumb(image, youtube);
+      let thumb_link = href.cloneNode(true);
       thumb_link.href = thumb_link.innerHTML = youtu;
       thumb.appendChild(thumb_link);
       body.insertBefore(thumb, body.children[0]);
@@ -252,21 +215,21 @@ function onNewArticle(article) {
     }
   }
 
-  var host = href.innerHTML;
+  let host = href.innerHTML;
 
   GM_xmlhttpRequest({
     method: 'GET',
     url: href.href,
     onload: function(response) {
-      var html = response.responseText;
+      let html = response.responseText;
 
-      var title = html.match(/<title[^>]*>([^<]+)<.title>/im) || "";
+      let title = html.match(/<title[^>]*>([^<]+)<.title>/im) || "";
       title = title && title[1];
-      var desc = html.match(	// description for twitter cards
+      let desc = html.match(	// description for twitter cards
         /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"][^'"]{6,}['"]){2}/i
       );
       if (! desc) {		// meta description proper
-        var desc = html.match(
+        let desc = html.match(
           /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"][^'"]{6,}['"]){2}/i
         );
       }
@@ -276,17 +239,17 @@ function onNewArticle(article) {
       desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
                            .replace(/^(.{499}).+$/, "$1…");
 
-      var body = q$(`div.body`, article);
+      let body = q$(`div.body`, article);
       if (! body) { return; }
 
-      var youtube = html.match(	// embedded youtube video
+      let youtube = html.match(	// embedded youtube video
         /<iframe\b(?:\s(?!src=)\S+)*\ssrc="(?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([^'"\s]+)/i
       );
-      if (youtube) {
-        youtube = embedYoutube(youtube[1]);
-      }
+      debug("youtube_embed (from /., used in crawl): " + youtube_embed);
+      if (youtube_embed) { youtube = embedYoutube(youtube_embed); }
+      else if  (youtube) { youtube = embedYoutube(youtube[1]); }
 
-      var image = html.match(	// twitter card image
+      let image = html.match(	// twitter card image
         /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
       );
       if (! image) {
@@ -295,7 +258,7 @@ function onNewArticle(article) {
         );
       }
       if (! image) {
-        var re =
+        let re =
           /<meta\b[^>]*\scontent=['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
@@ -305,22 +268,23 @@ function onNewArticle(article) {
         }
       }
       image = getContent(image);
+      if (! image) { debug("no image found in headers"); }
 
       // another blacklist needed for Reuters, who uses their logo as their card
-      if (image.match(RegExp(`^(?:${blacklist})`))) { image = ''; }
+      if (image && image.match(RegExp(`^(?:${img_blacklist})`))) { image = ''; }
 
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
       // trim wordpress down to just the actual story content
       if (! image && html.match(/<link\s.{9,256}\/wp-content\//)) { 
-        var tag = `img(?=\\s[^>]*\\bwp-image\\b)`;
+        let tag = `img(?=\\s[^>]*\\bwp-image\\b)`;
         image = getImage(html, tag, "jpe?g");
         if (! image) { image = getImage(html, tag); }
       }
       if (! image) { image = getImage(html, "img", "(?:jpe?g|png)"); }
       if (! image) { image = getImage(html, "img"); }
-    
-      if (! image) { return; }
+
+      if (! image) { debug("FINAL: no image found"); return; }
       if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
           image = href.href.match(/^https?:\/\/[^\/:?#]+/) + image;
@@ -331,9 +295,9 @@ function onNewArticle(article) {
 
       image = image.replace(/&(amp|#0*38|#x0*26);/g, "&");
 
-      var thumb = mkthumb(image, youtube);
+      let thumb = mkthumb(image, youtube);
       if (desc) { thumb.title = desc; }
-      var thumb_link = href.cloneNode(true);
+      let thumb_link = href.cloneNode(true);
       if (title) { thumb_link.innerHTML = title; }
       thumb.appendChild(thumb_link);
 
