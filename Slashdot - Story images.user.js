@@ -8,7 +8,7 @@
 // @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.2.0.20190812
+// @version	2.2.1.20200804
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -55,15 +55,14 @@ if (typeof GM_addStyle == 'undefined') {
 
 //// }}} end GM compatibility shims
 
-function debug(text) { return true; }
-//function debug(text) { console.log(text); }
+var debug_user = "Khopesh";	// change this if you want to see debug
+if (document.querySelector(`.user-access a[href*="/~${debug_user}"]`)) {
+  function debug(text) { console.log(text); return true; }
+} else {
+  function debug(text) { return false; }
+}
 
 debug("starting Slashdot Article Images");
-
-
-waitForKeyElements( /* syn=css */
-  `article.article:not([sai-done]):not([style*="margin-bottom"])`,
-  onNewArticle);
 
 // Returns object(s) matched as queried via CSS
 // q$(css)           =>  document.querySelector(css)
@@ -75,6 +74,11 @@ function q$(css, up = document, all = 0) { // by Adam Katz, github.com/adamhotep
   if (all) { return up.querySelectorAll(css); }
   else     { return up.querySelector(css); }
 }
+
+
+waitForKeyElements( /* syn=css */
+  `article.article:not([sai-done]):not([style*="margin-bottom"])`,
+  onNewArticle);
 
 // render text as HTML, convert to text, unescape items, remove remaining tags
 function fromHTML(text) {
@@ -99,11 +103,11 @@ function getContent(text) {
   return null;
 }
 
-// This builds a regular expression - see also the css in art_blacklist
-var img_blacklist = [
+// This builds a regular expression - see also the css in art_blocklist
+var img_blocklist = [
   'https://lauren.vortex.com/lauren.jpg',
-  '(?:https://slashdot.org)?/~.*',	// is this really for an IMAGE blacklist?
-  '(?:https://www.phoronix.com)?/phxcms7-css/phoronix.png',
+  '(?:https://slashdot.org)?/~.*',	// is this needed in an IMAGE blocklist?
+  '(?:https://(?:www\.)?phoronix.com)?/(?:phxcms7-css/phoronix.png|assets/categories/michaellarabel.jpg)',
   '(?:https://(?:[\\w.-]+.)?reutersmedia.net)?/resources_v2/images/rcom-default.png'
 ].join("|").replace(/\./g, "\\.");
 
@@ -118,9 +122,10 @@ function getImage(code, tag, ext="") {
   let skip_attr = `(?![^>]{0,999}\\s(?:width|height)=["']?1?[0-9]{2}\\b)`;
   let skip_src
     = `(?!`
-    +   img_blacklist
+    +   img_blocklist
     +   `|[^>\'\"]{0,999}(?:`
-    +     `advert|\\bad[sv]?\\b|banner|button\\.|ico(?:\\b|[n_0-9])|logo`
+    +     `advert|\\bad[sv]?\\b|badge(?![a-z])|banner|button\\.`
+    +     `|ico(?:\\b|[n_0-9])|logo`
     +     `|\\b[0-9]{1,2}px|[^0-9]1?[0-9]{1,2}x1?[0-9]{1,2}(?![0-9])`
     + `))`;
   let regex = new RegExp(
@@ -142,6 +147,7 @@ function embedYoutube(target) {
 
 // make the thumb (returns the thumb, append the link to it)
 function mkthumb(src, video=null) {
+  debug("making thumbnail for: " + src);
   let thumb = document.createElement("div");
   if (video) { thumb.appendChild(video); }
   let img = document.createElement("img");
@@ -158,24 +164,24 @@ function onNewArticle(article) {
 
   // This builds a CSS selector
   // it is scope-limited somehow (didn't work when put at top level)
-  var art_blacklist = ':not(' + [
+  var art_blocklist = ':not(' + [
     '[rel="tag"]',
     '[href^="https://slashdot.org/"]',
     '[href*=".slashdot.org/story/"]',
   ].join('):not(') + ')';
 
   let body = q$(`div.body`, article);
-  let href = q$(`a.story-sourcelnk${art_blacklist},
-                 a.submission-sourcelnk${art_blacklist}
+  let href = q$(`a.story-sourcelnk${art_blocklist},
+                 a.submission-sourcelnk${art_blocklist}
     `, article);
   if (! href || ! href.href) {
     // this uses the quoted area (an <i> tag) to avoid editor shout-out links
-    href = q$(`div.p > i a[href]${art_blacklist}`, article);
-    if (! href ) { href = q$(`div.p > i a[href]${art_blacklist}`, article); }
-    if (! href ) { href = q$(`div.p a[href]${art_blacklist}`, article); }
+    href = q$(`div.p > i a[href]${art_blocklist}`, article);
+    if (! href ) { href = q$(`div.p > i a[href]${art_blocklist}`, article); }
+    if (! href ) { href = q$(`div.p a[href]${art_blocklist}`, article); }
     if (! href || ! href.href) { debug("new article not found"); return; }
   }
-  debug("new article: " + href);
+  debug("new article: " + href.href);
 
   // direct youtube link
   // TODO: playlists? hints at https://stackoverflow.com/a/30419360/519360 #2
@@ -217,19 +223,78 @@ function onNewArticle(article) {
 
   let host = href.innerHTML;
 
+  function debug_resp(type, response) {
+    let state = ["UNSENT", "OPENED", "HEADERS_RECEIVED", "LOADING", "DONE"];
+    let text = [response.finalUrl, "Request " + type, response.status,
+      response.statusText, "State: " + state[response.readyState],
+      "HTTP Headers:\n", response.responseHeaders].join("\n");
+    if (debug(text)) { return true; }
+    if (type == "succeeded" && response.status && response.status == 200) { return true; }
+    console.log(text); // push errors to console anyway
+  }
+
   GM_xmlhttpRequest({
     method: 'GET',
     url: href.href,
-    onload: function(response) {
+    onabort:	function(response) { debug_resp("aborted", response); },
+    // Unknown error from Forbes on https://slashdot.org/submission/11512774/
+    // These diagnostics don't help--they're empty. Just status 4 (DONE).
+    onerror:	function(response) { debug_resp("error", response); },
+    ontimeout:	function(response) { debug_resp("timed out", response); },
+    onload:	function(response) {
+      debug_resp("succeeded", response);
       let html = response.responseText;
+
+      /* TODO: rewrite using DOM and q$() rather than parsing HTML with regexes
+       *
+       * here's my start: {{{
+
+      let dom = response.responseXML;
+      // backup, see https://wiki.greasespot.net/index.php?title=GM.xmlHttpRequest#GET_request
+      if (!dom) { dom = new DOMParser().parseFromString(response.responseText, "text/html"); }
+
+      let title = dom.title;
+      debug("article loaded: " + title || "(no title found)");
+
+      function meta_content(name) {
+        let m = q$(`meta[name="${name}"][content]:not([content=""])`, dom);
+        if (m && m.content) { return m.content; }
+        return null;
+      }
+
+      // get description
+      desc = meta_content("twitter:description") || meta_content("description");
+      // try to truncate at a word or else truncate to 500 chars anyway
+      desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
+                           .replace(/^(.{499}).+$/, "$1…");
+
+      if (youtube_embed) {
+        debug("youtube_embed (from /., used in crawl): " + youtube_embed);
+        youtube = embedYoutube(youtube_embed);
+      } else {
+        let youtube = q$(`
+          iframe[src^="https://youtube.com/embed/"],	iframe[src^="https://youtube-nocookie.com/embed/"],
+          iframe[src^="//youtube.com/embed/"],		iframe[src^="//youtube-nocookie.com/embed/"],
+          iframe[src^="http://youtube.com/embed/"],	iframe[src^="http://youtube-nocookie.com/embed/"],
+        `, dom);
+        if (youtube) {
+          youtube = embedYoutube(youtube.src.replace(/.*\/embed\/, ""));
+        }
+      }
+
+      let hdrs = q$("head", dom);
+      debug(hdrs);
+
+      /* end TODO }}} */
 
       let title = html.match(/<title[^>]*>([^<]+)<.title>/im) || "";
       title = title && title[1];
+      debug("article loaded: " + (title ? title : "(no title found)"));
       let desc = html.match(	// description for twitter cards
         /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"][^'"]{6,}['"]){2}/i
       );
       if (! desc) {		// meta description proper
-        let desc = html.match(
+        desc = html.match(
           /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"][^'"]{6,}['"]){2}/i
         );
       }
@@ -245,9 +310,12 @@ function onNewArticle(article) {
       let youtube = html.match(	// embedded youtube video
         /<iframe\b(?:\s(?!src=)\S+)*\ssrc="(?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([^'"\s]+)/i
       );
-      debug("youtube_embed (from /., used in crawl): " + youtube_embed);
-      if (youtube_embed) { youtube = embedYoutube(youtube_embed); }
-      else if  (youtube) { youtube = embedYoutube(youtube[1]); }
+      if (youtube_embed) {
+        debug("youtube_embed (from /., used in crawl): " + youtube_embed);
+        youtube = embedYoutube(youtube_embed);
+      } else if (youtube) {
+        youtube = embedYoutube(youtube[1]);
+      }
 
       let image = html.match(	// twitter card image
         /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
@@ -268,10 +336,14 @@ function onNewArticle(article) {
         }
       }
       image = getContent(image);
-      if (! image) { debug("no image found in headers"); }
+      if (image) { debug("image found: " + image); }
+      else       { debug("no image found in headers"); }
 
-      // another blacklist needed for Reuters, who uses their logo as their card
-      if (image && image.match(RegExp(`^(?:${img_blacklist})`))) { image = ''; }
+      // another blocklist needed for Reuters, who uses their logo as their card
+      if (image && image.match(RegExp(`^(?:${img_blocklist})`))) {
+        debug("image removed for matching img_blocklist: " + image);
+        image = '';
+      }
 
       if (! image) { image = getImage(html, "a", "jpe?g"); }
       if (! image) { image = getImage(html, "a", "png"); }
