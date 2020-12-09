@@ -4,9 +4,16 @@
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	UI tweaks for Atlassian Jira (tickets) and Confluence (wiki)
 // @include	https://jira.*
+// @include	https://jira-*
 // @include	https://confluence.*
+// @include	https://confluence-*
+// @include	https://wiki.*/display/*/*
+// @match	https://*/confluence/display/*/*
+// @match	https://*/*/confluence/display/*/*
+// @match	https://*/conf/display/*/*
+// @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.1.2.20190720
+// @version	0.1.3.20201007
 // @grant	none
 // ==/UserScript==
 
@@ -20,6 +27,10 @@
 */
 
 // helpers {{{
+
+function debug(text) { return true; }
+//function debug(text) { console.log(text); }
+debug("Atlassian Jira/Confluence - Tweaks: started\n" + Date());
 
 // Note, this very importantly takes a document argument for each iframe
 function addStyle(css, doc=document) {
@@ -72,7 +83,7 @@ var wiki = [ '.wiki-content', '#comments-section' ];
 var both = jira.concat(wiki);
 var syn = ['.syntaxhighlighter.sh-eclipse', '.syntaxhighlighter.sh-confluence'];
 
-function main(where=document) {
+function main(where=document) { try {
 
   // spell-check edit comment fields
   let edit_comments = q$(`input[name="versionComment"]`, where, 1);
@@ -103,19 +114,29 @@ function main(where=document) {
     elem.appendChild(self_link);
   }
 
+  // these code items are empty or have syntax highlighting & should be ignored
+  let code = 'code:not(' + [
+    ":empty", ".color1", ".color2", ".color3", ".comments", ".constants",
+    ".functions", ".keyword", ".plain", ".script", ".spaces", ".string",
+    ".preprocessor", ".value", ".variable"
+  ].join("):not(") + ")";
+
   addStyle(/* syn=css */ `
 
     /* borders for inline monospace font elements */
-    ${ sel(jira, 'tt:not(:empty)' )}, ${ sel(wiki, 'code:not(:empty)') } {
+    ${ sel(jira, 'tt:not(:empty)' )}, ${ sel(wiki, code) } {
       padding:0 0.2em; margin:0 0.2em;
       /* code block borders are #bbb with radius=5px */
       border:1px dashed #bbbb; border-radius:3px;
     }
-    /* I don't remember what this one is for... */
-    ${ sel(both, 'div.codeContent code:not(:empty)') } {
+    /* I don't remember what this one is for, but it was probably
+     * an older attempt at overriding the above for syntax highlighting,
+     * for which I now have a better solution. Disabled for now.
+    ${ sel(both, 'div.codeContent ' + code) } {
       padding:0; margin:0; background:inherit;
       border:none!important; border-radius:inherit;
     }
+    /**/
 
     ${ sel(jira, 'a[href]') }				{ color:#06b; }
     ${ sel(jira, 'a[href]:visited') }			{ color:#60b; }
@@ -134,11 +155,23 @@ function main(where=document) {
     ${ sel(syn, 'code.comments a:visited') }	{ color:#daf; }
     ${ sel(syn, 'code.comments a:active') }	{ color:#00f; }
 
-    body#tinymce pre.external-macro		{ font-family:monospace; }
+    body#tinymce pre.external-macro, code, kbd	{ font-family:monospace; }
+
+    /* gray the weekends in calendar month views */
+    .plugin-calendar .fc .fc-view-month .fc-sun,
+    .plugin-calendar .fc .fc-view-month .fc-sat {
+      background-color:#f4f5f7;
+    }
+    .plugin-calendar .fc .fc-view-month .fc-sun .fc-day-number,
+    .plugin-calendar .fc .fc-view-month .fc-sat .fc-day-number {
+      color:#999;
+    }
 
   `, where); // fix for wandering ` & syntax highlighting
-}
 
+} catch(e) { debug("error:\n" + e); } }
+
+/* disabled remnant of older version, not sure if I meant to remove it
 var content =
   q$(`.user-content-block, .action-body, #issue-description, #main-content`, 1);
 
@@ -151,20 +184,25 @@ for (let c=0; c < content.length; c++) {
     // connect contiguous tags that would interrupt our CSS bg/borders
     .replace(/(<(tt|code)\b\s*[^>]*>)([^<]+)<\/\2>\1/, "$1$3");
 }
+*/
 
 main(document);
 
 // for pop-ups: edit code blocks in fixed-width (the way it'll be displayed)
 waitForKeyElements(`iframe`, function(elem) {
+  debug("Atlassian Jira/Confluence - Tweaks: loaded an iframe\n" + Date());
   elem.removeAttribute("wfke_found"); // cheat wfke's been_there, use our own
   for (let f=0; f < frames.length; f++) {
     if (!frames[f].document.body.getAttribute("been_there")) {
-      addStyle(/* syn=css */ `
+      /*
+      addStyle(`
 
-        body#tinymce pre.external-macro		{ font-family:monospace; }
+        body#tinymce pre.external-macro, code, kbd	{ font-family:monospace; }
 
       `, frames[f].document);
+      */
       frames[f].document.body.setAttribute("been_there", 1);
+      main(frames[f].document);
     }
   }
 });
