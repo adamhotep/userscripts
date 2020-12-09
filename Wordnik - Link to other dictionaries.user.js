@@ -2,7 +2,7 @@
 // @name	Wordnik - Link to other dictionaries
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.3.0.20200802
+// @version	0.4.0.20201209
 // @include	https://www.wordnik.com/words/*
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
@@ -77,7 +77,8 @@ function addHeader(text) {
 }
 
 
-var up = document.querySelector(".word_page");
+//var up = document.querySelector(".word_page");
+var up = document.querySelector(".module-2columnRight");
 if (term && up) {
 
   up.prependChild(extra);
@@ -217,8 +218,8 @@ css.textContent = /* syn=css */ `
 #wnkxtra_hidden:checked + #wnkxtra	{ width:1em; height:1em; overflow:hidden; }
 #wnkxtra_hidden + #wnkxtra #wnkxtra_x:after		{ content: "−"; }
 #wnkxtra_hidden:checked + #wnkxtra #wnkxtra_x:after	{ content: "+"; }
-#wnkxtra		{ color:#777; background:#fff8; border:1px solid #eee;
-			  border-radius:1ex; position:fixed; z-index:1;
+#wnkxtra		{ float:right; color:#777; background:#fff8;
+			  border:1px solid #eee; border-radius:1ex;
 			  margin:3em 0 0 .5ex; padding:1ex 1ex 1ex 2ex; }
 #wnkxtra li			{ list-style-type:none; line-height:1em; }
 #wnkxtra li.h			{ font-weight:bold; margin-left:-1ex; }
@@ -227,8 +228,8 @@ css.textContent = /* syn=css */ `
 #wnkxtra a			{ text-decoration:none; }
 #wnkxtra a:hover 		{ text-decoration:underline; }
 #wnkxtra .startpage_image	{ display:block; margin-top:3px; }
-#wnkxtra .startpage_image:hover	{ position:absolute; }
 #wnkxtra .startpage_image:not(:hover)	{ max-width:10em; }
+#wnkxtra + *			{ clear:right; }
 
 `;
 document.head.appendChild(css);
