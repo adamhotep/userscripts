@@ -52,28 +52,32 @@ if (typeof GM_addStyle == 'undefined') {
 
 var term = location.pathname.substr(7); // remove the "/words/" prefix
 term = term.replace(/\/$/, '');
-var extra = document.createElement("ul");
+var extra = document.createElement("div");
 
 Node.prototype.prependChild = function(elem) {
   if (this.childElementCount == 0) { return this.appendChild(elem); }
   return this.insertBefore(elem, this.firstElementChild);
 }
 
-function addLink(href, text, title="") {
+function addSection(header) {
+  let section = document.createElement("ul");
+  section.classList.add(header.replace(/\W+/g, "_"));
+  let item = document.createElement("li");
+  item.append(header);
+  item.classList.add("h");
+  section.appendChild(item);
+  extra.appendChild(section);
+  return section;
+}
+
+function addLink(section, href, text, title="") {
   let item = document.createElement("li");
   let link = document.createElement("a");
   link.href = href;
   if (title) { link.title = title; }
   link.append(text);
   item.appendChild(link);
-  return extra.appendChild(item);
-}
-
-function addHeader(text) {
-  let item = document.createElement("li");
-  item.append(text);
-  item.classList.add("h");
-  return extra.appendChild(item);
+  return section.appendChild(item);
 }
 
 
@@ -97,85 +101,85 @@ if (term && up) {
 
   extra.id = "wnkxtra";
 
-  addHeader("More Dictionaries");
+  let dicts = addSection("More Dictionaries");
 
   /*
-  addLink(
+  addLink(dicts,
     "https://www.wordnik.com/words/" + term,
     "Wordnik",
     "American Heritage 4e, Century Dictionary, GNU Collaborative Int'l, Roget's II 3e, Wordnet 3.0, Wiktionary"
   );
   */
-  addLink(
+  addLink(dicts,
     "https://en.wiktionary.org/wiki/Special:Search?go=Go&search=" + term,
     "Wiktionary", "User-driven general dictionary, sister to Wikipedia"
   );
-  addLink(
+  addLink(dicts,
     "https://www.urbandictionary.com/define.php?term=" + term,
     "Urban Dictionary", "User-driven slang dictionary, can be NSFW"
   );
-  addLink(
+  addLink(dicts,
     "https://www.collinsdictionary.com/dictionary/english/" + term,
     "Collins",
     "Unabridged Collins, Official Scrabble, frequencies via Google Ngrams"
   );
-  addLink(
+  addLink(dicts,
     "https://www.dictionary.com/browse/" + term,
     "Dictionary.com", "Random House Unabridged, Collins, American Heritage, +"
   );
-  addLink(
+  addLink(dicts,
     "https://www.merriam-webster.com/dictionary/" + term,
     "Merriam-Webster"
   );
 
-  addHeader("Thesauruses");
+  let thesrs = addSection("Thesauruses");
 
-  addLink(
+  addLink(thesrs,
     "http://www.moby-thesaurus.org/search?q=" + term,
     "Moby Thesaurus", "Perhaps the biggest thesaurus out there"
   );
-  addLink(
+  addLink(thesrs,
     `https://www.wordnik.com/words/${term}#related`,
     "Wordnik",
     "American Heritage 4e, Century, GNU Collaborative Int'l, Roget's II 3e, Wordnet 3.0, Wiktionary"
   );
-  addLink(
+  addLink(thesrs,
     "http://words.bighugelabs.com/" + term,
     "Big Huge Thesaurus", "Princeton Wordnet, CMU Pronouncing Dictionary"
   );
-  addLink(
+  addLink(thesrs,
     "https://www.thesaurus.com/browse/" + term,
     "Thesaurus.com", "Random House Unabridged, Collins, American Heritage, +"
   );
 
-  addHeader("Other");
+  let others = addSection("Other");
 
-  addLink(
+  addLink(others,
     "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + term,
     "Wikipedia", "User-driven general encyclopedia"
   );
 
-  addLink(
+  addLink(others,
     "https://books.google.com/ngrams/graph?content=" + term
     + "&case_insensitive=on&year_start=1900&year_end=2999"
     + "&corpus=15&smoothing=3",
     "Google Ngrams", "Popularity of this word in printed books"
   );
 
-  addLink(
+  addLink(others,
     "https://duckduckgo.com/?ko=s&kp=-1&kw=w&kd=-1&ia=news&iax=1&q=" + term,
     "DuckDuckGo News"
   );
-  addLink(
+  addLink(others,
     "https://duckduckgo.com/?ko=s&kp=-1&kw=w&kd=-1&ia=web&iax=1&q=" + term,
     "DuckDuckGo Web"
   );
-  addLink(
+  addLink(others,
     "https://duckduckgo.com/?ko=s&kp=-1&kw=w&kd=-1&ia=images&iax=1&q=" + term,
     "DuckDuckGo Images"
   );
 
-  img_link = addLink(
+  img_link = addLink(others,
     "https://www.startpage.com/do/search?cat=pics&query=" + term,
     "Google Images"
   ).childNodes[0];
@@ -218,17 +222,18 @@ css.textContent = /* syn=css */ `
 #wnkxtra_hidden:checked + #wnkxtra	{ width:1em; height:1em; overflow:hidden; }
 #wnkxtra_hidden + #wnkxtra #wnkxtra_x:after		{ content: "−"; }
 #wnkxtra_hidden:checked + #wnkxtra #wnkxtra_x:after	{ content: "+"; }
-#wnkxtra		{ float:right; color:#777; background:#fff8;
+#wnkxtra		{ float:right; width:100%; color:#777; background:#fff8;
 			  border:1px solid #eee; border-radius:1ex;
 			  margin:3em 0 0 .5ex; padding:1ex 1ex 1ex 2ex; }
+#wnkxtra ul			{ clear:right; float:left; width:50%; }
+#wnkxtra ul.Other		{ clear:both; width:100%; }
 #wnkxtra li			{ list-style-type:none; line-height:1em; }
-#wnkxtra li.h			{ font-weight:bold; margin-left:-1ex; }
-#wnkxtra li.h:not(:first-child)	{ margin-top:3ex; }
+#wnkxtra li.h			{ font-weight:bold; margin:3ex 0 0 -1ex; }
 #wnkxtra li:not(.h)::before	{ content:"🠞"; padding-right:.2em; }
 #wnkxtra a			{ text-decoration:none; }
 #wnkxtra a:hover 		{ text-decoration:underline; }
 #wnkxtra .startpage_image	{ display:block; margin-top:3px; }
-#wnkxtra .startpage_image:not(:hover)	{ max-width:10em; }
+#wnkxtra .startpage_image:not(:hover)	{ max-width:100%; }
 #wnkxtra + *			{ clear:right; }
 
 `;
