@@ -26,38 +26,31 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.1.0.20190720
+// @version	1.2.0.20200405
 // @author	Adam Katz
 // @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
 // ==/UserScript==
 
 // Copyright (C) 2016+ by Adam Katz, https://stackexchange.com/users/674651
-// License details: {{{
+// Licensed under the GPL v3+ {{{
 //
-// ISC License: http://opensource.org/licenses/ISC
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
 //
-// Permission to use, copy, modify, and/or distribute this software for any
-// purpose with or without fee is hereby granted, provided that the above
-// copyright notice and this permission notice appear in all copies.
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
 //
-// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-// REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-// AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-// INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-// LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-// OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-// PERFORMANCE OF THIS SOFTWARE.
-
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Beerware: If you think this is worth it, you are welcome to buy me a beer.
 
-// In addition to the licenses granted above, the authors, to the extent we
-// are authorized to do so, and subject to the disclaimer stated above, hereby
-// grant Stack Exchange, Inc. permission to make use of this software in any
-// way they see fit, including but not limited to incorporating all or parts of
-// it within the Stack Exchange codebase, with or without credit to the authors.
-// This permission grant does not extend to any code written by third parties,
-// unless said parties also agree to it.
+// The author of this script is also open to different licensing models in
+// order to facilitate incorporation into StackExchange properties.
 // }}}
 
 // helpers {{{
@@ -154,51 +147,63 @@ for (let u = 0, ul = user_info.length; u < ul; u++) {
 var code_blocks = q$(`div.post-text pre`, 1);
 if (code_blocks) {
 
+  // Denote whether shift is being held
+  let onKeyDown = function(event) {
+    if (event.key == "Shift") { document.body.classList.add("shift_key"); }
+  };
+  let onKeyUp = function(event) {
+    if (event.key == "Shift") { document.body.classList.remove("shift_key"); }
+  };
+  window.addEventListener("keydown", onKeyDown, false);
+  window.addEventListener("keyup", onKeyUp, false);
+  let noshift = /* syn=css */ `body:not(.shift_key)`;	// CSS matcher
+
+  // CSS to widen on hover
   addStyle(`
 
     /* Ensure links in code are only barely distinguishable until hovered.
      * Uses a CSS filter b/c StackExchange sites use different color schemes */
-    .post-text pre a:not(:hover) {
+    ${noshift} .post-text pre a:not(:hover) {
       /* note to self: brightness() isn't very good at text colors */
       color:inherit; filter:brightness(1.5) sepia(50%);
     }
-    .post-text pre a:not(:hover) .com { /* comments within links */
+    ${noshift} .post-text pre a:not(:hover) .com { /* comments within links */
       filter:brightness(0.75) sepia(20%);
     }
 
-    .post-text pre.wider:hover {
-      background-color:#eeee; /* a tiny bit of transparency */
-      position:relative; z-index:9; /* don't disrupt later elements */
+    ${noshift} .post-text pre.wider:hover {
+      background-color:#eeee;		/* a tiny bit of transparency */
+      position:relative; z-index:9;	/* don't disrupt later elements */
       /* This previously used overflow-x:scroll but box-sizing:border-box fails
        * to account for the scrollbar even though it was previously present,
        * so we use overflow-x:hidden instead. This "shouldn't" matter */
       overflow-x:hidden; /* don't move later elements up by scrollbar height */
-      box-sizing: border-box; /* fails to count scroll bar.  Firefox BUG? */
+      box-sizing: border-box;
       width:-moz-fit-content; width:-webkit-fit-content; width:fit-content;
 
-      /* BUG: this breaks on window resizes */
+      /* BUG: this breaks on window resizes, wontfix */
       max-width:${document.body.clientWidth}px;
     }
     .post-text pre.wider.widest {
       position:relative;
     }
-    .post-text pre.wider.widest:hover {
-      left:0!important; /* enable offset correction in js code */
-      overflow-x:auto;  /* this MIGHT require scroll and/or !important */
+    ${noshift} .post-text pre.wider.widest:hover {
+      left:0!important;	/* enable offset correction in js code */
+      overflow-x:auto;	/* this MIGHT require scroll and/or !important */
       z-index:1001;	/* On top of .left-sidebar { z-index:1000 } */
     }
     code {
-      font-family: Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,Consolas,Menlo,Liberation Mono,monospace;
+      font-family:Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,Consolas,Menlo,Liberation Mono,monospace;
     }
   `);
 
 
-  ///// Designate which code blocks need to grow and by how much
+  // Designate which code blocks need to grow and by how much
   for (var c = 0, cl = code_blocks.length; c < cl; c++) {
 
     // Make links clickable.
     code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
-      // avoid ampersands (escaped ampersands are okay) + trailing punctuation
+      // avoid (non-HTML-escaped) ampersands as well as trailing punctuation
       /([^\w.-])(https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
       '$1<a href="$2">$2</a>');
 
@@ -256,3 +261,11 @@ if (add_question_css) {
 }
 // Done collapsing flagged questions }}}
 
+// Misc CSS tweaks {{{
+addStyle(`
+
+  .deleted-answer pre, .deleted-answer pre code {
+    background-color:var(--black-050);
+  }
+
+`); // Done with misc CSS tweaks }}}
