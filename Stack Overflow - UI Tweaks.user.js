@@ -26,7 +26,7 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.2.0.20200405
+// @version	1.2.1.20210715
 // @author	Adam Katz
 // @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
@@ -192,8 +192,10 @@ if (code_blocks) {
       overflow-x:auto;	/* this MIGHT require scroll and/or !important */
       z-index:1001;	/* On top of .left-sidebar { z-index:1000 } */
     }
-    code {
-      font-family:Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,Consolas,Menlo,Liberation Mono,monospace;
+    body {
+      /* added Linux-friendly fonts ahead of the defaults.
+       * (a July 2021 SE change used a font whose spaces were too narrow) */
+      --ff-mono: Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,ui-monospace,"Cascadia Mono","Segoe UI Mono","Liberation Mono",Menlo,Monaco,Consolas,monospace;
     }
   `);
 
