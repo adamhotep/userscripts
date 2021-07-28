@@ -13,7 +13,7 @@
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.1.3.20201007
+// @version	0.1.3.20210508
 // @grant	none
 // ==/UserScript==
 
@@ -104,6 +104,12 @@ function main(where=document) { try {
       elem = elem.previousElementSibling;
     }
     if (! elem.innerText.match(/\S/) ) { continue; } // skip empty headings
+
+    // remove frivolous trailing <br>
+    let trailing_br = /<br>[\r\n]{0,2}<\/span>$/;
+    if (elem.innerHTML.match(trailing_br)) {
+      elem.innerHTML = elem.innerHTML.replace(trailing_br, '</span>');
+    }
 
     let self_link = document.createElement("a");
     let target = elem.id || elem.name;
