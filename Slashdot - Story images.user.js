@@ -8,7 +8,7 @@
 // @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.2.1.20200804
+// @version	2.2.1.20210425
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -56,13 +56,9 @@ if (typeof GM_addStyle == 'undefined') {
 //// }}} end GM compatibility shims
 
 var debug_user = "Khopesh";	// change this if you want to see debug
-if (document.querySelector(`.user-access a[href*="/~${debug_user}"]`)) {
-  function debug(text) { console.log(text); return true; }
-} else {
-  function debug(text) { return false; }
-}
+var debug = !!document.querySelector(`.user-access a[href*="/~${debug_user}"]`);
 
-debug("starting Slashdot Article Images");
+if (debug) console.log("starting Slashdot Article Images");
 
 // Returns object(s) matched as queried via CSS
 // q$(css)           =>  document.querySelector(css)
@@ -92,7 +88,7 @@ function fromHTML(text) {
 // needed because we can't use capture inside repeated element. For example:
 // /(?:&foo=(bar)|&baz=blah){2}/ fails to capture bar in &foo=bar&baz=blah
 function getContent(text) {
-  if (! text) return null;
+  if (! text) return "";
   text = text.toString();
   let content = text.match(/\s(?:content|src)="([^"]*)"/);	// double quotes
   if (content) return content[1];
@@ -100,13 +96,14 @@ function getContent(text) {
   if (content) return content[1];
   content = text.match(/\s(?:content|src)=(\S+)/);		// no quotes
   if (content) return content[1];
-  return null;
+  return "";
 }
 
 // This builds a regular expression - see also the css in art_blocklist
 var img_blocklist = [
   'https://lauren.vortex.com/lauren.jpg',
   '(?:https://slashdot.org)?/~.*',	// is this needed in an IMAGE blocklist?
+  'https://a\\.fsdn\\.com/sd/.*optout\\.png\\b',
   '(?:https://(?:www\.)?phoronix.com)?/(?:phxcms7-css/phoronix.png|assets/categories/michaellarabel.jpg)',
   '(?:https://(?:[\\w.-]+.)?reutersmedia.net)?/resources_v2/images/rcom-default.png'
 ].join("|").replace(/\./g, "\\.");
@@ -147,7 +144,7 @@ function embedYoutube(target) {
 
 // make the thumb (returns the thumb, append the link to it)
 function mkthumb(src, video=null) {
-  debug("making thumbnail for: " + src);
+  if (debug) console.log("making thumbnail for: " + src);
   let thumb = document.createElement("div");
   if (video) { thumb.appendChild(video); }
   let img = document.createElement("img");
@@ -167,6 +164,7 @@ function onNewArticle(article) {
   var art_blocklist = ':not(' + [
     '[rel="tag"]',
     '[href^="https://slashdot.org/"]',
+    '[href^="/~"]',
     '[href*=".slashdot.org/story/"]',
   ].join('):not(') + ')';
 
@@ -179,9 +177,9 @@ function onNewArticle(article) {
     href = q$(`div.p > i a[href]${art_blocklist}`, article);
     if (! href ) { href = q$(`div.p > i a[href]${art_blocklist}`, article); }
     if (! href ) { href = q$(`div.p a[href]${art_blocklist}`, article); }
-    if (! href || ! href.href) { debug("new article not found"); return; }
+    if (! href || ! href.href) { if (debug) console.log("new article not found"); return; }
   }
-  debug("new article: " + href.href);
+  if (debug) console.log("new article: " + href.href);
 
   // direct youtube link
   // TODO: playlists? hints at https://stackoverflow.com/a/30419360/519360 #2
@@ -204,7 +202,7 @@ function onNewArticle(article) {
         /(?:embed\/|watch\?(?:.*&)?v=|youtu\.be\/)([\w-]{5,})/
       );
       if (youtube_embed) { youtube_embed = youtube_embed[1]; }
-      debug("youtube_embed (in /. article): " + youtube_embed);
+      if (debug) console.log("youtube_embed (in /. article): " + youtube_embed);
     }
   }
   if (youtube) {
@@ -228,7 +226,7 @@ function onNewArticle(article) {
     let text = [response.finalUrl, "Request " + type, response.status,
       response.statusText, "State: " + state[response.readyState],
       "HTTP Headers:\n", response.responseHeaders].join("\n");
-    if (debug(text)) { return true; }
+    if (debug) { console.log(text); return true; }
     if (type == "succeeded" && response.status && response.status == 200) { return true; }
     console.log(text); // push errors to console anyway
   }
@@ -254,7 +252,7 @@ function onNewArticle(article) {
       if (!dom) { dom = new DOMParser().parseFromString(response.responseText, "text/html"); }
 
       let title = dom.title;
-      debug("article loaded: " + title || "(no title found)");
+      if (debug) console.log("article loaded: " + title || "(no title found)");
 
       function meta_content(name) {
         let m = q$(`meta[name="${name}"][content]:not([content=""])`, dom);
@@ -269,7 +267,7 @@ function onNewArticle(article) {
                            .replace(/^(.{499}).+$/, "$1…");
 
       if (youtube_embed) {
-        debug("youtube_embed (from /., used in crawl): " + youtube_embed);
+        if (debug) console.log("youtube_embed (from /., used in crawl): " + youtube_embed);
         youtube = embedYoutube(youtube_embed);
       } else {
         let youtube = q$(`
@@ -283,13 +281,14 @@ function onNewArticle(article) {
       }
 
       let hdrs = q$("head", dom);
-      debug(hdrs);
+      if (debug) console.log(hdrs);
 
       /* end TODO }}} */
 
-      let title = html.match(/<title[^>]*>([^<]+)<.title>/im) || "";
+      let title = html.match(/<title[^>]*>\s*([^\s<][^<]*)<.title>/im) || "";
       title = title && title[1];
-      debug("article loaded: " + (title ? title : "(no title found)"));
+      title = title.replace(/\s+$/, "");
+      if (debug) console.log("article loaded: " + (title ? title : "(no title found)"));
       let desc = html.match(	// description for twitter cards
         /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"][^'"]{6,}['"]){2}/i
       );
@@ -299,6 +298,7 @@ function onNewArticle(article) {
         );
       }
       desc = getContent(desc);
+      desc = desc.replace(/^\s+|\s+$/gm, "").replace(/\s\s+|\t/g, " ");
       if (!desc || title.length > desc.length) { desc = title; }
       // try to truncate at a word or else truncate to 500 chars anyway
       desc = fromHTML(desc).replace(/^(.{420,497})\s.*$/, "$1 …")
@@ -311,12 +311,13 @@ function onNewArticle(article) {
         /<iframe\b(?:\s(?!src=)\S+)*\ssrc="(?:https?:)?\/\/(?:www\.)?youtube(?:-nocookie)?\.com\/embed\/([^'"\s]+)/i
       );
       if (youtube_embed) {
-        debug("youtube_embed (from /., used in crawl): " + youtube_embed);
+        if (debug) console.log("youtube_embed (from /., used in crawl): " + youtube_embed);
         youtube = embedYoutube(youtube_embed);
       } else if (youtube) {
         youtube = embedYoutube(youtube[1]);
       }
 
+      if (debug) console.log("looking for an image now");
       let image = html.match(	// twitter card image
         /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
       );
@@ -335,13 +336,14 @@ function onNewArticle(article) {
           image = null; 	// reset since an exclusion triggered
         }
       }
+      if (image && debug) { console.log("raw image found: " + image); }
       image = getContent(image);
-      if (image) { debug("image found: " + image); }
-      else       { debug("no image found in headers"); }
+      if (image && debug) { console.log("image found: " + image); }
+      else if (debug)     { console.log("no image found in headers"); }
 
       // another blocklist needed for Reuters, who uses their logo as their card
       if (image && image.match(RegExp(`^(?:${img_blocklist})`))) {
-        debug("image removed for matching img_blocklist: " + image);
+        if (debug) console.log("image removed for matching img_blocklist: " + image);
         image = '';
       }
 
@@ -356,7 +358,7 @@ function onNewArticle(article) {
       if (! image) { image = getImage(html, "img", "(?:jpe?g|png)"); }
       if (! image) { image = getImage(html, "img"); }
 
-      if (! image) { debug("FINAL: no image found"); return; }
+      if (! image) { if (debug) console.log("FINAL: no image found"); return; }
       if (!image.match(/^(?:https?:)?\/\//)) {		// not absolute
         if (0 == image.indexOf("/")) {			// relative to root
           image = href.href.match(/^https?:\/\/[^\/:?#]+/) + image;
