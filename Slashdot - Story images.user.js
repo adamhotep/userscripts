@@ -8,7 +8,7 @@
 // @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.2.1.20210425
+// @version	2.2.2.20220910
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -100,13 +100,15 @@ function getContent(text) {
 }
 
 // This builds a regular expression - see also the css in art_blocklist
+// Also note that all dots are escaped, use `\\S` instead of `.` for "any char"
 var img_blocklist = [
   'https://lauren.vortex.com/lauren.jpg',
+  'https://techcrunch.com/wp-content/uploads/[0-9/-]+/tc-logo-\\d+-square-reverse\\dx.png',
   '(?:https://slashdot.org)?/~.*',	// is this needed in an IMAGE blocklist?
-  'https://a\\.fsdn\\.com/sd/.*optout\\.png\\b',
-  '(?:https://(?:www\.)?phoronix.com)?/(?:phxcms7-css/phoronix.png|assets/categories/michaellarabel.jpg)',
+  'https://a.fsdn.com/sd/\\S*optout.png\\b',
+  '(?:https://(?:www.)?phoronix.com)?/(?:phxcms7-css/phoronix.png|assets/categories/michaellarabel.jpg)',
   '(?:https://(?:[\\w.-]+.)?reutersmedia.net)?/resources_v2/images/rcom-default.png'
-].join("|").replace(/\./g, "\\.");
+].join("|").replace(/\.(?<!\\\.)/g, "\\.");
 
 // get images directly from HTML body
 function getImage(code, tag, ext="") {
@@ -182,7 +184,7 @@ function onNewArticle(article) {
   if (debug) console.log("new article: " + href.href);
 
   // direct youtube link
-  // TODO: playlists? hints at https://stackoverflow.com/a/30419360/519360 #2
+  // TODO: playlists? See #2 at https://stackoverflow.com/a/30419360/519360
   let youtube = href.href.match(
     /^https?:\/\/(?:www\.)?(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?(?:.*&)?v=)|youtu\.be\/)([\w-]{5,})/
   );
@@ -290,11 +292,11 @@ function onNewArticle(article) {
       title = title.replace(/\s+$/, "");
       if (debug) console.log("article loaded: " + (title ? title : "(no title found)"));
       let desc = html.match(	// description for twitter cards
-        /<meta\b(?:\s+name=['"]twitter:description['"]|\s+content=['"][^'"]{6,}['"]){2}/i
+        /<meta\b(?:\s+(?:property|name)\s*=\s*['"]twitter:description['"]|\s+content\s*=\s*['"][^'"]{6,}['"]){2}/i
       );
       if (! desc) {		// meta description proper
         desc = html.match(
-          /<meta\b(?:\s+name=['"]?description['"]?(?=[\t >])|\s+content=['"][^'"]{6,}['"]){2}/i
+          /<meta\b(?:\s+(?:name|property)\s*=\s*['"]?description['"]?(?=[\t >])|\s+content\s*=\s*['"][^'"]{6,}['"]){2}/i
         );
       }
       desc = getContent(desc);
@@ -319,16 +321,16 @@ function onNewArticle(article) {
 
       if (debug) console.log("looking for an image now");
       let image = html.match(	// twitter card image
-        /<meta\b(?:\s+name=['"]twitter:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2}/i
+        /<meta\b(?:\s+(?:name|property)\s*=\s*['"]twitter:image(?::src)?['"]|\s+content\s*=\s*['"](?:http|\/\/)[^"']+['"]){2}/i
       );
       if (! image) {
         image = html.match(	// other meta content images, esp. "og:image"
-          /<meta\b[^>]*(?:\s+(?:name|property)=['"][^"']*:image(?::src)?['"]|\s+content=['"](?:http|\/\/)[^"']+['"]){2,3}/i
+          /<meta\b[^>]*(?:\s+(?:name|property)\s*=\s*['"][^"']*:image(?::src)?['"]|\s+content\s*=\s*['"](?:http|\/\/)[^"']+['"]){2,3}/i
         );
       }
       if (! image) {
         let re =
-          /<meta\b[^>]*\scontent=['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
+          /<meta\b[^>]*\scontent\s*=\s*['"][^"']+\.(?:jpe?g|png)(?:[?&\/#][^'"]*)?['"]/gi;
         while ( image = re.exec(html) ) {	// other meta content images
           // accept only if what we found wasn't an icon or other exclusion
           // image.match isn't always a function(!?) so make sure it is a funciton first
@@ -370,7 +372,11 @@ function onNewArticle(article) {
       image = image.replace(/&(amp|#0*38|#x0*26);/g, "&");
 
       let thumb = mkthumb(image, youtube);
-      if (desc) { thumb.title = desc; }
+      if (desc) {
+        let oldtitle = href.title.replace(RegExp(" . " + href.href), "");
+        thumb.title = href.title = desc;
+        if (oldtitle) { href.title += ` (${oldtitle})`; }
+      }
       let thumb_link = href.cloneNode(true);
       if (title) { thumb_link.innerHTML = title; }
       thumb.appendChild(thumb_link);
