@@ -2,7 +2,7 @@
 // @name	Wordnik - Link to other dictionaries
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.4.0.20201209
+// @version	0.4.1.20220329
 // @include	https://www.wordnik.com/words/*
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
@@ -135,6 +135,10 @@ if (term && up) {
   let thesrs = addSection("Thesauruses");
 
   addLink(thesrs,
+    "https://www.merriam-webster.com/thesaurus/" + term,
+    "Merriam-Webster", "Roget's Thesaurus?"
+  );
+  addLink(thesrs,
     "http://www.moby-thesaurus.org/search?q=" + term,
     "Moby Thesaurus", "Perhaps the biggest thesaurus out there"
   );
@@ -150,6 +154,10 @@ if (term && up) {
   addLink(thesrs,
     "https://www.thesaurus.com/browse/" + term,
     "Thesaurus.com", "Random House Unabridged, Collins, American Heritage, +"
+  );
+  addLink(thesrs,
+    "https://thesaurus.yourdictionary.com/" + term,
+    "YourDictionary", "YourDictionary Thesaurus"
   );
 
   let others = addSection("Other");
