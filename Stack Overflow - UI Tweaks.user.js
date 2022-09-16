@@ -26,7 +26,7 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.2.1.20210715
+// @version	1.2.2.20220606
 // @author	Adam Katz
 // @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
@@ -76,6 +76,23 @@ function addStyle(css) { style.textContent += css; }
 // end helpers }}}
 
 // color user badges by how high their score is {{{
+function rep2color(rep) {
+  let hue = Math.log2(rep);
+  let saturation = 60;
+  // 2^17 = 131k (top 711 all-time as of Jun 2022), so we'll make that 100% red
+  // and then turn up saturation for top performers like Jon Skeet (#1).
+  // Skeet's 1336k gets us 93%. Note 999% is treated as 100%, so no cap needed.
+  // Math.SE (2nd biggest SE site)'s #1 is 588k, Superuser (3rd)'s #1 is 404k
+  if (hue > 17) {
+    saturation = Math.round(saturation + (hue - 17) * 10);
+    hue = 17;
+  }
+  hue = Math.round(hue / 17 * 180 + 180);
+
+  return `hsla(${hue}, ${saturation}%, 50%, 0.2)`;
+}
+
+// questions and answers
 var user_info = q$(`.user-info`, 1);
 if (user_info) {
   addStyle(`
@@ -100,51 +117,41 @@ for (let u = 0, ul = user_info.length; u < ul; u++) {
        rep = rep.title;
   else rep = rep.innerText;
   rep = rep.replace(/[^0-9]+/g, "");
-  if (isNaN(rep)) { continue; }
-
-  let hue = Math.log2(rep);
-  let saturation = 60;
-  // 2^17 = 131k (top 469 all-time as of Jul 2019), so we'll make that 100% red
-  // and then turn up saturation for top performers like Jon Skeet (#1).
-  // Skeet's 1113k gets us 91%. Note 999% is treated as 100%, so no cap needed.
-  // Superuser (2nd biggest SE site)'s #1 275k, Math.SE's #1 is 465k
-  if (hue > 17) {
-    saturation = Math.round(saturation + (hue - 17) * 10);
-    hue = 17;
-  }
-  hue = Math.round(hue / 17 * 180 + 180);
-
-  hsla = `hsla(${hue}, ${saturation}%, 50%, 0.2)`;
-  box.style.backgroundColor = hsla;
-  //console.log(`${u} rep=${rep}\t${hsla}\t${box.style.backgroundColor}`);
+  box.style.backgroundColor = rep2color(rep);
 
   box.classList.add("reputation_color");
+}
 
-  /* previous attempt used privilege tiers and then exponents
-  let priv_tier = 0;
+// indexes and search results
+var usrcmin = "s-user-card__minimal";
+var user_rep = q$(`.${usrcmin} [title^="reputation score"]`, 1);
+if (user_rep) {
+  addStyle(`
+    .${usrcmin} {
+      /* attr(foo, color) is too new: https://bugzil.la/1448251 */
+      /* background-color: attr(data-bgcolor, color, transparent); */
+      padding:0.3em 0.5em !important; border-radius:0.6em;
+      text-shadow: 0 0 0.1em white;
+    }
+    .${usrcmin}:hover {
+      background-color: transparent!important; transition:background-color 1s;
+    }
+  `);
+}
+for (let u = 0, ul = user_rep.length; u < ul; u++) {
+  let rep = user_rep[u].innerText / 1;
+  if (isNaN(rep)) { continue; }
+  let card = user_rep[u].parentElement;
+  while (!card.classList.contains(usrcmin)) { card = card.parentElement; }
 
-  // This uses https://stackoverflow.com/help/privileges and then powers of two
-  // to determine the "privilege tier" which will dictate color.
-  //
-  // 2^15 = 32k, 2^16 = 66k, 2^17 = 131k, 2^18 = 262k.
-  // At this time, the 500th best (all time) has 125k reputation.
-  // The 100th best has 306k, the 148th has 263k, and the 469th has 131k.
-  [ 1, 5, 10, 15, 20, 50, 75, 100, 125, 200, 250, 500, 1000,
-    1500, 2000, 2500, 3000, 5000, 10000, 15000, 20000, 25000, // end of privs
-    2**15, 2**16, 2**17, 2**18
-  ].forEach( function(p) {
-    if (rep >= p) priv_tier++;
-  });
-
-  // We're using a 26-point blue-to-black-to-red themometer here
-  box.style.backgroundColor = `hsl(${priv_tier/26*180+180}, 60%, 50%)`;
-  */
-
+  // browsers don't yet implement attr(foo, color): https://bugzil.la/1448251
+  // card.dataset.bgcolor = rep2color(rep);
+  card.style.backgroundColor = rep2color(rep);
 }
 // done coloring user badges by score }}}
 
 // code block hover-to-widen {{{
-var code_blocks = q$(`div.post-text pre`, 1);
+var code_blocks = q$(`div.post-text pre, div.s-prose pre`, 1);
 if (code_blocks) {
 
   // Denote whether shift is being held
@@ -163,15 +170,15 @@ if (code_blocks) {
 
     /* Ensure links in code are only barely distinguishable until hovered.
      * Uses a CSS filter b/c StackExchange sites use different color schemes */
-    ${noshift} .post-text pre a:not(:hover) {
+    ${noshift} pre.code_block a:not(:hover) {
       /* note to self: brightness() isn't very good at text colors */
       color:inherit; filter:brightness(1.5) sepia(50%);
     }
-    ${noshift} .post-text pre a:not(:hover) .com { /* comments within links */
+    ${noshift} pre.code_block a:not(:hover) .com { /* comments within links */
       filter:brightness(0.75) sepia(20%);
     }
 
-    ${noshift} .post-text pre.wider:hover {
+    ${noshift} pre.code_block.wider:hover {
       background-color:#eeee;		/* a tiny bit of transparency */
       position:relative; z-index:9;	/* don't disrupt later elements */
       /* This previously used overflow-x:scroll but box-sizing:border-box fails
@@ -184,10 +191,10 @@ if (code_blocks) {
       /* BUG: this breaks on window resizes, wontfix */
       max-width:${document.body.clientWidth}px;
     }
-    .post-text pre.wider.widest {
+    pre.code_block.wider.widest {
       position:relative;
     }
-    ${noshift} .post-text pre.wider.widest:hover {
+    ${noshift} pre.code_block.wider.widest:hover {
       left:0!important;	/* enable offset correction in js code */
       overflow-x:auto;	/* this MIGHT require scroll and/or !important */
       z-index:1001;	/* On top of .left-sidebar { z-index:1000 } */
@@ -202,6 +209,7 @@ if (code_blocks) {
 
   // Designate which code blocks need to grow and by how much
   for (var c = 0, cl = code_blocks.length; c < cl; c++) {
+    code_blocks[c].classList.add("code_block");
 
     // Make links clickable.
     code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
@@ -229,39 +237,51 @@ if (code_blocks) {
 
 // collapse flagged questions when viewing > 15 questions {{{
 // (closed, on hold, dupe, etc) https://meta.stackexchange.com/q/10582/259816
-var questions = q$(`#questions a[href].question-hyperlink`, 1);
+var questions = q$(`#questions h3 a[href^="/questions"]`, 1);
 var add_question_css = false;
 for (let q = 0, ql = questions.length; ql > 15 && q < ql; q++) {
   if (questions[q].innerText.match(
     /\[(?:duplicate|on hold|migrated|closed)\]$/
   )) {
-    let expandor = document.createElement("a");
+    let expander = document.createElement("a");
     add_question_css = true;
-    expandor.href = questions[q].href;
-    expandor.appendChild(document.createTextNode(" "));
-    expandor.classList.add("expandor");
+    expander.href = questions[q].href;
+    expander.appendChild(document.createTextNode(" "));
+    expander.classList.add("expander");
 
     // must be added *before* the text since the text might wrap
-    questions[q].parentElement.insertBefore(expandor, questions[q]);
+    questions[q].parentElement.insertBefore(expander, questions[q]);
     questions[q].parentElement.parentElement.parentElement
       .classList.add("skip");
 
-    expandor.onclick = function() {
+    expander.onclick = function() {
       this.parentElement.parentElement.parentElement.classList.toggle("open");
       return false; // don't actually go anywhere
     };
   }
 }
 if (add_question_css) {
-  let qs = "#questions .question-summary.skip";
+  let qs = "#questions .skip";
+  let closed_link = `${qs}:not(.open) a.question-hyperlink`;
   addStyle(`
-    ${qs}:not(.open)			{ height:1.5em; }
-    ${qs} .expandor::before		{ color:#59c; }
-    ${qs}:not(.open) .expandor::before	{ content:"(expand)"; cursor:zoom-in; }
-    ${qs}.open .expandor::before	{ content:"(shrink)"; cursor:zoom-out; }
+    ${qs}:not(.open)	{ height:3.5rem; white-space:nowrap; overflow:clip; }
+    ${qs}:not(.open) [class*="-stats"]	{ overflow-x:clip; }
+    ${qs} .expander::before		{ color:#59c; }
+    ${closed_link}:not(:hover)		{ color:#abc; }
+    ${closed_link}			{ letter-spacing:-0.02em;
+      font-family:Arial Narrow,Carlito,Calibri; }
+    ${qs}:not(.open) .expander::before	{ content:"(expand)"; cursor:zoom-in; }
+    ${qs}.open .expander::before	{ content:"(shrink)"; cursor:zoom-out; }
   `);
 }
 // Done collapsing flagged questions }}}
+
+// adblock {{{
+var sponsored = q$(`div.site-header--sponsored`, 1);
+for (let s=0, sl=sponsored.length; s < sl; s++) {
+  sponsored[s].parentElement.style.setProperty('display', 'none', 'important');
+}
+// }}}
 
 // Misc CSS tweaks {{{
 addStyle(`
@@ -269,5 +289,6 @@ addStyle(`
   .deleted-answer pre, .deleted-answer pre code {
     background-color:var(--black-050);
   }
+  .s-table-container .s-table td { padding:1px 1ex; }
 
 `); // Done with misc CSS tweaks }}}
