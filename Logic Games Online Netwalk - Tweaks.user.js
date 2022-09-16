@@ -2,7 +2,7 @@
 // @name	Logic Games Online Netwalk - Tweaks
 // @description	Put the puzzle up top and prevent scrolling
 // @author	Adam Katz
-// @version	1.0.20210724
+// @version	1.0.20210830
 // @grant	none
 // @include	https://www.logicgamesonline.com/netwalk/*
 // ==/UserScript==
@@ -33,8 +33,10 @@ style.textContent = /* syn=css */ `
 #scroller     { display:block; margin-top:2em; }
 body.noscroll { overflow:hidden; }
 
-body.noscroll #explain.red       { color:red; }
-body:not(.noscroll) #explain.red { transition:color 1.5s; }
+body.noscroll #explain.red {
+  color:red; font-size:0; overflow:hidden; transition:all 0.33s ease-out; }
+body:not(.noscroll) #explain.red {
+  transition:color 1.1s ease-out, font-size 0.5s ease-out; }
 
 `;
 
