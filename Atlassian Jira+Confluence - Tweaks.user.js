@@ -13,7 +13,7 @@
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.1.3.20210508
+// @version	0.1.4.20220502
 // @grant	none
 // ==/UserScript==
 
@@ -161,7 +161,16 @@ function main(where=document) { try {
     ${ sel(syn, 'code.comments a:visited') }	{ color:#daf; }
     ${ sel(syn, 'code.comments a:active') }	{ color:#00f; }
 
-    body#tinymce pre.external-macro, code, kbd	{ font-family:monospace; }
+    /* some odd Firefox bug makes the default monospace not work right */
+    body pre, body pre *, code, kbd	{
+      font-family:Panic Sans,DejaVu Sans Mono,Consolas,ui-monospace!important;
+    }
+
+    /* hovering shouldn't move the text! */
+    .issue-data-block:not(:hover) {
+      border-left:5px solid transparent;
+      padding-left:5px;
+    }
 
     /* gray the weekends in calendar month views */
     .plugin-calendar .fc .fc-view-month .fc-sun,
@@ -203,7 +212,7 @@ waitForKeyElements(`iframe`, function(elem) {
       /*
       addStyle(`
 
-        body#tinymce pre.external-macro, code, kbd	{ font-family:monospace; }
+        body pre.external-macro, code, kbd	{ font-family:monospace; }
 
       `, frames[f].document);
       */
@@ -211,4 +220,11 @@ waitForKeyElements(`iframe`, function(elem) {
       main(frames[f].document);
     }
   }
+});
+
+// wtf, Atlassian. Never use !important in production. Traverse your own CSS.
+// It's MUCH worse to use it in a style attribute because it can't be changed.
+// (Also, setting the font within a `pre` is really weird and unnecessary)
+waitForKeyElements(`pre > span[style]`, function(elem) {
+  elem.style.removeProperty("font-family");
 });
