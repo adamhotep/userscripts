@@ -13,7 +13,7 @@
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.1.4.20220502
+// @version	0.1.5.20230130
 // @grant	none
 // ==/UserScript==
 
@@ -162,7 +162,7 @@ function main(where=document) { try {
     ${ sel(syn, 'code.comments a:active') }	{ color:#00f; }
 
     /* some odd Firefox bug makes the default monospace not work right */
-    body pre, body pre *, code, kbd	{
+    body pre, body pre *, code, kbd, td.code div	{
       font-family:Panic Sans,DejaVu Sans Mono,Consolas,ui-monospace!important;
     }
 
