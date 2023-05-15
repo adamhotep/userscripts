@@ -2,8 +2,9 @@
 // @name	Wordnik - Link to other dictionaries
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.4.1.20220329
+// @version	0.5.20230302.0
 // @include	https://www.wordnik.com/words/*
+// @require	https://git.io/waitForKeyElements.js
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
@@ -49,6 +50,15 @@ if (typeof GM_addStyle == 'undefined') {
 }
 
 //// }}} end GM compatibility shims
+
+// linkify cross-references (why doesn't Wordnik do this?)
+waitForKeyElements('xref', function(xref) {
+  let link = document.createElement("a");
+  link.textContent = xref.innerText;
+  xref.textContent = "";
+  xref.appendChild(link);
+  link.href = "/words/" + link.textContent;
+});
 
 var term = location.pathname.substr(7); // remove the "/words/" prefix
 term = term.replace(/\/$/, '');
@@ -243,6 +253,7 @@ css.textContent = /* syn=css */ `
 #wnkxtra .startpage_image	{ display:block; margin-top:3px; }
 #wnkxtra .startpage_image:not(:hover)	{ max-width:100%; }
 #wnkxtra + *			{ clear:right; }
+xref > a			{ color:#148; }
 
 `;
 document.head.appendChild(css);
