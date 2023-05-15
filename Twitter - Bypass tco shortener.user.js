@@ -3,8 +3,9 @@
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
 // @include	https://twitter.com/*
+// @include	https://mobile.twitter.com/*
 // @include	https://tweetdeck.twitter.com/*
-// @version	1.1.2.20210727
+// @version	1.1.20210727.2
 // @grant	none
 // @require	https://git.io/waitForKeyElements.js
 // ==/UserScript==
