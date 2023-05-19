@@ -13,7 +13,7 @@
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.1.5.20230130
+// @version	0.2.20230518.0
 // @grant	none
 // ==/UserScript==
 
@@ -23,6 +23,7 @@
        * edit code blocks in fixed width
      * Spell-check comment fields
      * Make clickable anchors for Confluence page sections for easy sharing
+     * Add an "expand/collapse all" button for collapsed Confluence content
      * Probably more stuff that hasn't made it to this list
 */
 
@@ -228,3 +229,35 @@ waitForKeyElements(`iframe`, function(elem) {
 waitForKeyElements(`pre > span[style]`, function(elem) {
   elem.style.removeProperty("font-family");
 });
+
+// Allow expanding or collapsing everything (source and expands)
+let ajs_menu = q$(".ajs-menu-bar");
+if (ajs_menu && q$(".expand-control")) { // menu && things to expand
+  let expander_item = document.createElement("li");
+  expander_item.classList.add("ajs-button", "normal");
+  let expand = document.createElement("a");
+  expand.classList.add("aui-button", "aui-button-subtle", "expand");
+  expand.href = "#";
+  expand.rel = "nofollow";
+  expand.title = "Expand all source and expand items";
+  expand.textContent = "Expand";
+  expand.addEventListener("click", () => {
+    if (expand.classList.contains("collapse")) {	// collapse
+      document.querySelectorAll('.expand-control').forEach(e => {
+        if (e.getAttribute("aria-expanded") == "true"
+          || e.querySelector(".expanded")) { e.click() }
+      });
+      expand.classList.remove("collapse");
+      expand.textContent = "Expand";
+    } else {	// expand
+      expand.classList.add("collapse");
+      document.querySelectorAll('.expand-control:not([aria-expanded="true"])')
+        .forEach(e => { if (!e.querySelector(".expanded")) { e.click() } });
+      expand.textContent = "Collapse";
+    }
+    expand.title = expand.title.replace(/^\w+/, expand.textContent);
+  });
+  expander_item.appendChild(expand);
+  ajs_menu.insertBefore(expander_item,
+    ajs_menu.children[ajs_menu.children.length-1]);
+}
