@@ -26,7 +26,7 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.2.2.20220606
+// @version	1.3.20230920.0
 // @author	Adam Katz
 // @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
@@ -290,5 +290,11 @@ addStyle(`
     background-color:var(--black-050);
   }
   .s-table-container .s-table td { padding:1px 1ex; }
+
+  textarea.wmd-input {
+    /* we have to guess the scrollbar width :-(  FF w/ GTK = 24px for me */
+    width:calc(80ch + 24px);	/* 80 monospace chars + scrollbar */
+    scrollbar-gutter:stable;	/* always allocate space for scrollbar */
+  }
 
 `); // Done with misc CSS tweaks }}}
