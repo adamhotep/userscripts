@@ -13,7 +13,7 @@
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
 // @require	https://git.io/waitForKeyElements.js
-// @version	0.2.20230518.0
+// @version	0.3.20230824.0
 // @grant	none
 // ==/UserScript==
 
@@ -24,6 +24,8 @@
      * Spell-check comment fields
      * Make clickable anchors for Confluence page sections for easy sharing
      * Add an "expand/collapse all" button for collapsed Confluence content
+     * Clone Jira tickets' comment-sorting button to be visible from the bottom
+     * "Remember my login" should default to being checked
      * Probably more stuff that hasn't made it to this list
 */
 
@@ -167,11 +169,11 @@ function main(where=document) { try {
       font-family:Panic Sans,DejaVu Sans Mono,Consolas,ui-monospace!important;
     }
 
-    /* hovering shouldn't move the text! */
+    /* hovering shouldn't move the text! *(appears fixed)/
     .issue-data-block:not(:hover) {
       border-left:5px solid transparent;
       padding-left:5px;
-    }
+    } */
 
     /* gray the weekends in calendar month views */
     .plugin-calendar .fc .fc-view-month .fc-sun,
@@ -230,7 +232,7 @@ waitForKeyElements(`pre > span[style]`, function(elem) {
   elem.style.removeProperty("font-family");
 });
 
-// Allow expanding or collapsing everything (source and expands)
+// Allow expanding or collapsing everything (source and expands) {{{
 let ajs_menu = q$(".ajs-menu-bar");
 if (ajs_menu && q$(".expand-control")) { // menu && things to expand
   let expander_item = document.createElement("li");
@@ -260,4 +262,34 @@ if (ajs_menu && q$(".expand-control")) { // menu && things to expand
   expander_item.appendChild(expand);
   ajs_menu.insertBefore(expander_item,
     ajs_menu.children[ajs_menu.children.length-1]);
-}
+}	// }}}
+
+// Remind the user how comments are sorted at the bottom of the comments {{{
+var comments = q$("#activitymodule");
+if (comments) {
+  waitForKeyElements(`#sort-button`, sort => {
+    var sort2 = sort.cloneNode(true);
+    sort2.id = "sort-button2";
+    sort2.style.float = "right";
+    // copy CSS from #sort-button and other inheritances
+    sort2.style.display = "flex";
+    sort2.style.alignItems = "center";
+    sort2.style.fontWeight = "600";
+    // sync sort2's content with sort1 after it is updated from a click (0.3s)
+    function sync_sorters() {
+      setTimeout(() => { sort2.innerHTML = sort.innerHTML; }, 300);
+    }
+    sort.addEventListener("click", () => { sync_sorters() });
+    // apparently sync_sorters isn't redundant and is needed? Harmless otherwise
+    sort2.addEventListener("click", () => { sort.click(); sync_sorters() });
+    comments.appendChild(sort2);
+  });
+}	// }}}
+
+// Check "remember my login" by default {{{
+// If you share your browser profile, you probably don't tweak with userscripts.
+// Apparently, Confluence uses 'os_cookie' to name that checkbox. WTF.
+let check = 'input[type="checkbox"]';
+let remember_me = q$(`${check}#login-form-remember-me, ${check}#os_cookie`);
+if (remember_me) { remember_me.checked = true; }
+// }}}
