@@ -12,8 +12,8 @@
 // @match	https://*/*/confluence/display/*/*
 // @match	https://*/conf/display/*/*
 // @match	https://*/*/conf/display/*/*
-// @require	https://git.io/waitForKeyElements.js
-// @version	0.3.20230824.0
+// @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
+// @version	0.4.20240331.0
 // @grant	none
 // ==/UserScript==
 
@@ -26,34 +26,27 @@
      * Add an "expand/collapse all" button for collapsed Confluence content
      * Clone Jira tickets' comment-sorting button to be visible from the bottom
      * "Remember my login" should default to being checked
+     * Gray out weekends in calendar views
+     * Pre-populate Confluence's "Site Search" field given "Page Not Found"
+     * Auto-collapse *jira-integration comments
+     * Remove unnecessary junk in links to comments
      * Probably more stuff that hasn't made it to this list
 */
 
 // helpers {{{
 
-function debug(text) { return true; }
-//function debug(text) { console.log(text); }
-debug("Atlassian Jira/Confluence - Tweaks: started\n" + Date());
+const enable_debug = false;
 
-// Note, this very importantly takes a document argument for each iframe
-function addStyle(css, doc=document) {
-  let style = doc.createElement("style");
-  style.type = "text/css";
-  style.textContent = css;
-  doc.head.appendChild(style);
-  return style;
+function debug(text) {
+  if (!enable_debug) { return true; }
+  if (typeof text == "string") {
+    text = `Atlassian Jira/Confluence - Tweaks: ${Date()}\n${text}`;
+  }
+  console.log(text);
 }
 
-// Returns object(s) matched as queried via CSS
-// q$(css)           =>  document.querySelector(css)
-// q$(css, elem)     =>  elem.querySelector(css)
-// q$(css, true)     =>  document.querySelectorAll(css)
-// q$(css, elem, 1)  =>  elem.querySelectorAll(css)
-function q$(css, up = document, all = 0) { // by Adam Katz, github.com/adamhotep
-  if (all === 0 && typeof up != "object") { all = up; up = document; }
-  if (all) { return up.querySelectorAll(css); }
-  else     { return up.querySelector(css); }
-}
+debug("started");
+
 
 // lots of different potential parents for given selector;
 // parents is an array by reference, args is an array of the remaining arguments
@@ -130,7 +123,7 @@ function main(where=document) { try {
     ".preprocessor", ".value", ".variable"
   ].join("):not(") + ")";
 
-  addStyle(/* syn=css */ `
+  nf.style$(`
 
     /* borders for inline monospace font elements */
     ${ sel(jira, 'tt:not(:empty)' )}, ${ sel(wiki, code) } {
@@ -185,6 +178,13 @@ function main(where=document) { try {
       color:#999;
     }
 
+    /* The Symbol picker is clipped */
+    #insert-char-dialog { width:640px!important; }
+    .aui-dialog .dialog-panel-body { padding-top:0; padding-bottom:0; }
+    iframe#content_insert-char-dialog { height:calc(100% + 1ex); }
+    table#charmap-picker { border-spacing:0; }
+    #charmap-picker, #charmap-picker #charmap-view { padding:0; }
+
   `, where); // fix for wandering ` & syntax highlighting
 
 } catch(e) { debug("error:\n" + e); } }
@@ -206,14 +206,16 @@ for (let c=0; c < content.length; c++) {
 
 main(document);
 
-// for pop-ups: edit code blocks in fixed-width (the way it'll be displayed)
-waitForKeyElements(`iframe`, function(elem) {
-  debug("Atlassian Jira/Confluence - Tweaks: loaded an iframe\n" + Date());
+debug("main is done");
+
+// for pop-ups: edit code blocks in fixed-width (the way it'll be displayed) {{{
+nf.wait$(`iframe`, elem => {
+  debug("loaded an iframe");
   elem.removeAttribute("wfke_found"); // cheat wfke's been_there, use our own
   for (let f=0; f < frames.length; f++) {
     if (!frames[f].document.body.getAttribute("been_there")) {
       /*
-      addStyle(`
+      nf.style$(`
 
         body pre.external-macro, code, kbd	{ font-family:monospace; }
 
@@ -223,14 +225,23 @@ waitForKeyElements(`iframe`, function(elem) {
       main(frames[f].document);
     }
   }
-});
+});	// }}}
 
-// wtf, Atlassian. Never use !important in production. Traverse your own CSS.
-// It's MUCH worse to use it in a style attribute because it can't be changed.
-// (Also, setting the font within a `pre` is really weird and unnecessary)
-waitForKeyElements(`pre > span[style]`, function(elem) {
-  elem.style.removeProperty("font-family");
-});
+// Remove unnecessary junk in links to comments {{{
+var comm_link_junk = '&page=com.atlassian.jira.plugin.system.issuetabpanels:'
+                   + 'comment-tabpanel#comment';
+nf.wait$(`a.comment-created-date-link[href*="${comm_link_junk}"]`, comment => {
+    comment.href = comment.href.replace(comm_link_junk, "#comment");
+});	// }}}
+
+// Auto-collapse integration comments {{{
+// TODO if I'm sufficiently ambitious: add a button that lets the user
+// toggle this rather than hard-coding the username (or a part of it as we do)
+nf.wait$(
+  // :has() is beautiful. No more e.parentElement.nextElementSibling!
+  `.verbose button:has(+ div a.user-hover[rel$="jira-integration"])`,
+  expander => { expander.click(); debug("collapsed"); debug(expander); }
+);	// }}}
 
 // Allow expanding or collapsing everything (source and expands) {{{
 let ajs_menu = q$(".ajs-menu-bar");
@@ -267,7 +278,7 @@ if (ajs_menu && q$(".expand-control")) { // menu && things to expand
 // Remind the user how comments are sorted at the bottom of the comments {{{
 var comments = q$("#activitymodule");
 if (comments) {
-  waitForKeyElements(`#sort-button`, sort => {
+  nf.wait$(`#sort-button`, sort => {
     var sort2 = sort.cloneNode(true);
     sort2.id = "sort-button2";
     sort2.style.float = "right";
@@ -293,3 +304,23 @@ let check = 'input[type="checkbox"]';
 let remember_me = q$(`${check}#login-form-remember-me, ${check}#os_cookie`);
 if (remember_me) { remember_me.checked = true; }
 // }}}
+
+// Atlassian sucks at CSS. Clean up what we can't just override. {{{
+// wtf, Atlassian. Never use !important in production. Fix your own CSS.
+// It's MUCH worse to use it in a style attribute because it can't be changed.
+// (Also, setting the font within a `pre` is really weird and unnecessary)
+nf.wait$(`pre > span[style]`, elem => {
+  elem.style.removeProperty("font-family");
+});	// }}}
+
+// Page Not Found should search for the page you tried to visit {{{
+if (location.pathname.includes("/display/")
+&& document.title.indexOf("Page Not Found - ") == 0) {
+  let search = q$('#searchfield');
+  if (search && search.value == "") {
+    search.value = location.pathname.replace(/.*\/display\/[^\/]+[\/]/, "");
+  }
+}
+// }}}
+
+debug("done");
