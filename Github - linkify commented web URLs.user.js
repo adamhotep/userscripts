@@ -1,21 +1,15 @@
 // ==UserScript==
-// @name        Github - linkify commented web URLs
+// @name        Github - UI Tweaks
 // @namespace   https://github.com/adamhotep/userscripts
 // @include     https://gist.github.com/*
 // @include     https://github.com/*
 // @grant       none
 // @author      Adam Katz
-// @version     1.0.20190209
+// @version     1.1.20231202
 // @license     GPL
 // ==/UserScript==
 
-// WARNING: This "shouldn't" run due to Github's Content Security Policy,
-// but when it updates (from Github?), it no longer violates the policy
-// and it then starts working. I don't fully understand it.
-// See also https://github.com/greasemonkey/greasemonkey/issues/2046
-// and https://bugzilla.mozilla.org/show_bug.cgi?id=1267027
-
-/* 
+/*
  * Copyright (C) 2016+ by Adam Katz
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -26,8 +20,9 @@
  * included LICENSE file or else http://www.gnu.org/licenses for more details.
  *
  * Beerware: If you think this is worth it, you are welcome to buy me a beer.
- */ 
+ */
 
+// Linkify commented web URLs
 // This ignores .pl-s (strings) because it may be **constructing** a URL
 var plc = document.querySelectorAll(".pl-c");
 for (var c = 0, cl = plc.length; c < cl; c++) {
@@ -36,3 +31,13 @@ for (var c = 0, cl = plc.length; c < cl; c++) {
     .replace(/\b(https?:\/\/(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&*])/ig,
              '<a href="$1">$1</a>');
 }
+
+// Linux Firefox font tweak for fixed-width code segments
+let style = document.createElement('style');
+style.setAttribute('type', 'text/css');
+document.head.appendChild(style);
+style.textContent = /* syn=css */ `
+
+  .CodeMirror-sizer pre { font-family:monospace !important; }
+
+`;
