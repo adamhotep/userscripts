@@ -26,9 +26,8 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.3.20230920.0
+// @version	1.3.20231202.0
 // @author	Adam Katz
-// @downloadURL	https://github.com/adamhotep/userscripts/raw/master/Stack_Overflow_-_Widen_code_blocks_on_hover.user.js
 // @grant	none
 // ==/UserScript==
 
@@ -150,7 +149,7 @@ for (let u = 0, ul = user_rep.length; u < ul; u++) {
 }
 // done coloring user badges by score }}}
 
-// code block hover-to-widen {{{
+// code blocks: hover to widen, clickable comments links {{{
 var code_blocks = q$(`div.post-text pre, div.s-prose pre`, 1);
 if (code_blocks) {
 
@@ -202,23 +201,19 @@ if (code_blocks) {
     body {
       /* added Linux-friendly fonts ahead of the defaults.
        * (a July 2021 SE change used a font whose spaces were too narrow) */
-      --ff-mono: Panic Sans,Bitstream Vera Sans Mono,Inconsolata,Droid Sans Mono,ui-monospace,"Cascadia Mono","Segoe UI Mono","Liberation Mono",Menlo,Monaco,Consolas,monospace;
+      --ff-mono: "Panic Sans","Bitstream Vera Sans Mono",Inconsolata,
+        "Droid Sans Mono",ui-monospace,"Cascadia Mono","Segoe UI Mono",
+        "Liberation Mono",Menlo,Monaco,Consolas,monospace;
     }
-  `);
+  `); // fix syntax highlighting: `
 
 
   // Designate which code blocks need to grow and by how much
-  for (var c = 0, cl = code_blocks.length; c < cl; c++) {
+  for (let c = 0, cl = code_blocks.length; c < cl; c++) {
     code_blocks[c].classList.add("code_block");
 
-    // Make links clickable.
-    code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
-      // avoid (non-HTML-escaped) ampersands as well as trailing punctuation
-      /([^\w.-])(https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
-      '$1<a href="$2">$2</a>');
-
-    var width = code_blocks[c].scrollWidth;
-    var offset = code_blocks[c].getBoundingClientRect().x;
+    let width = code_blocks[c].scrollWidth;
+    let offset = code_blocks[c].getBoundingClientRect().x;
     if (width && width > code_blocks[c].clientWidth) {
       code_blocks[c].classList.add("wider");
       if (offset + width > document.body.clientWidth) {
@@ -231,7 +226,14 @@ if (code_blocks) {
         code_blocks[c].style.left = + offset + "px";		// + offset
       }
     }
+
+    // Make links clickable.
+    code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
+      // avoid (non-HTML-escaped) ampersands as well as trailing punctuation
+      /([^\w.-])(https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
+      '$1<a href="$2">$2</a>');
   }
+  addStyle(`.code_block a span { color:inherit !important; }`);
 
 } // Done with code blocks }}}
 
