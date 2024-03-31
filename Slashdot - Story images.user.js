@@ -8,11 +8,19 @@
 // @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.2.1.20220906
+// @version	2.2.1.20240331
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
+
+/* Installation instructions:
+ *
+ * You need a browser add-on that can interpret user scripts to use this.
+ * I use Greasemonkey <https://addons.mozilla.org/firefox/addon/greasemonkey/>
+ * but this script should also work on other userscript add-ons such as
+ * Violentmonkey <https://violentmonkey.github.io/> for Chrome/Edge/Brave & FF.
+ */
 
 // Copyright 2009+ by Adam Katz, GPL v3+ {{{
 //
