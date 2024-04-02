@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name	Atlassian Jira/Confluence - tweaks
+// @name	Atlassian Jira+Confluence - Tweaks
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	UI tweaks for Atlassian Jira (tickets) and Confluence (wiki)
@@ -8,12 +8,17 @@
 // @include	https://confluence.*
 // @include	https://confluence-*
 // @include	https://wiki.*/display/*/*
+// @include	https://wiki.*/pages/viewpage.action?*
 // @match	https://*/confluence/display/*/*
+// @match	https://*/confluence/pages/viewpage.action?*
 // @match	https://*/*/confluence/display/*/*
+// @match	https://*/*/confluence/pages/viewpage.action?*
 // @match	https://*/conf/display/*/*
+// @match	https://*/conf/pages/viewpage.action?*
 // @match	https://*/*/conf/display/*/*
+// @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.4.20240331.0
+// @version	0.4.20240401.0
 // @grant	none
 // ==/UserScript==
 
@@ -33,20 +38,9 @@
      * Probably more stuff that hasn't made it to this list
 */
 
+nf.debug("started");
+
 // helpers {{{
-
-const enable_debug = false;
-
-function debug(text) {
-  if (!enable_debug) { return true; }
-  if (typeof text == "string") {
-    text = `Atlassian Jira/Confluence - Tweaks: ${Date()}\n${text}`;
-  }
-  console.log(text);
-}
-
-debug("started");
-
 
 // lots of different potential parents for given selector;
 // parents is an array by reference, args is an array of the remaining arguments
@@ -71,8 +65,6 @@ function sel(parents, ...args) {
 }
 
 // end helpers }}}
-
-var link_icon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAJcEhZcwAACxMAAAsTAQCanBgAAABgUExURUxpcZKSknFxcYCAgKGhoWVlZZubm319fVdXV4aGhoiIiJCQkG5ublxcXHJycpKSkmVlZd3d3YiIiFxcXKGhoVNTU5ubm+bm5vX19e/v7+Pj4+vr6+3t7bGxsdfX12tra+Tj6rUAAAAOdFJOUwCWls+Wlpb+lpbzz8/UUcJgcwAAAHxJREFUGNNNzYkOwiAQBFBqaReqLvehFf3/vxSbjGWyIdkJmyfEPzJGKYasuda8nvtkHqbPhF37l9e/BwXtJkpNjlBwyzXzky8o5n5PxS7wrtvumwsKXqNCt5QUPOrH8+CxdTYOHoUSPoP35nsKg7f0/xbeERUcPDTwjnwBI3oH02ImngkAAAAASUVORK5CYII="; // {{{ this is a vim fold }}}
 
 var jira = [ '#description-val .user-content-block', '.action-body' ];
 var wiki = [ '.wiki-content', '#comments-section' ];
@@ -146,9 +138,8 @@ function main(where=document) { try {
 
     /* linkified anchors */
     ${ sel(both,'.heading:not(:hover) > a.self-link') }	{ display:none; }
-    ${ sel(both, '.heading > a.self-link::after') } {
-      margin-left:0.5ex; opacity:0.667; position:absolute;
-      content:url(${link_icon});
+    ${ sel(both, '.heading > a.self-link::after') } { /* link icon */
+      margin-left:0.5ex; opacity:0.667; position:absolute; content:"\\1f517";
     }
 
     /* tweaks to colors in syntax highlighter for code blocks */
@@ -187,7 +178,7 @@ function main(where=document) { try {
 
   `, where); // fix for wandering ` & syntax highlighting
 
-} catch(e) { debug("error:\n" + e); } }
+} catch(e) { nf.debug("error:\n%o", e); } }
 
 /* disabled remnant of older version, not sure if I meant to remove it
 var content =
@@ -206,11 +197,11 @@ for (let c=0; c < content.length; c++) {
 
 main(document);
 
-debug("main is done");
+nf.debug("main is done");
 
 // for pop-ups: edit code blocks in fixed-width (the way it'll be displayed) {{{
 nf.wait$(`iframe`, elem => {
-  debug("loaded an iframe");
+  nf.debug("loaded an iframe");
   elem.removeAttribute("wfke_found"); // cheat wfke's been_there, use our own
   for (let f=0; f < frames.length; f++) {
     if (!frames[f].document.body.getAttribute("been_there")) {
@@ -240,7 +231,7 @@ nf.wait$(`a.comment-created-date-link[href*="${comm_link_junk}"]`, comment => {
 nf.wait$(
   // :has() is beautiful. No more e.parentElement.nextElementSibling!
   `.verbose button:has(+ div a.user-hover[rel$="jira-integration"])`,
-  expander => { expander.click(); debug("collapsed"); debug(expander); }
+  expander => { expander.click(); nf.debug("collapsed:\n%o", expander); }
 );	// }}}
 
 // Allow expanding or collapsing everything (source and expands) {{{
@@ -323,4 +314,4 @@ if (location.pathname.includes("/display/")
 }
 // }}}
 
-debug("done");
+nf.debug("done");
