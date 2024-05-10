@@ -2,7 +2,7 @@
 // @name	Aspell SCOWL English Speller Word Lookup - Mobile & Desktop
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.1.20240509.0
+// @version	0.1.20240509.1
 // @match	*://app.aspell.net/lookup*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // @grant	none
@@ -41,10 +41,7 @@ var style = nf.style$(`
   #footnotes          > b::after { content:" +"; }
   #footnotes.expanded > b::after { content:" −"; }
 
-  td[align]:nth-child(6) {
-    color:#000; background-color:#fff;
-    text-shadow:#fff 0 0 1ex, #fff 0 0 2ex;
-  }
+  td[align]:nth-child(6) { color:#000; background-color:#fff; }
 
   /* Eh? I can't just say "mobile" here?
    * max-width doesn't seem to work right, and browsers seem to lie for @media
@@ -56,7 +53,7 @@ var style = nf.style$(`
   }
 
   @media (prefers-color-scheme: dark) {
-    body, td	{ background-color:#333; color:#fff; }
+    body, td, p	{ background-color:#333; color:#fff; }
     footnote	{ color:#a99; }
     textarea, input { background-color:#fff3; color:#fff; }
     font[color="ff0000"], :active { color:#f66; font-weight:bold; }
@@ -76,34 +73,40 @@ q$(`td`, 1).forEach(td => {
 q$(`td[align]:nth-child(6)`, 1).forEach(col => {
   let freq = parseFloat(col.innerText);
   let cell = col.parentElement.children;
+  let rgb = 255;
   if (freq < 0.01 && cell[2].innerText == "") {	// rare
-    let rgb = 128 + 12800 * freq;	// 0-128 out of 255
+    rgb = 128 + 12800 * freq;	// 0-128 out of 255
     col.style.backgroundColor = `rgb(${rgb}, ${rgb}, 255)`;
   } else if (freq >= 1) {	// common
-    let rgb = 200 - 2 * freq;	// 0-200 out of 255, inverted
+    rgb = 200 - 2 * freq;	// 0-200 out of 255, inverted
     col.style.backgroundColor = `rgb(255, ${rgb}, ${rgb})`;
   }
+  if (rgb < 128) { col.style.color = "#fff"; }
 });
 
 // Collapse footnotes
 var footnotes = q$('table + p');
-if (footnotes) {
+if (footnotes && ! q$('#footnotes')) {
   footnotes.id = "footnotes";
-  let entities = footnotes.innerText.match(/\[[^\]]+\]/g).join(" ");
-  footnotes_intro = document.createElement("b");
-  footnotes.insertBefore(document.createElement("br"), footnotes.firstChild);
-  footnotes.insertBefore(document.createElement("br"), footnotes.firstChild);
+  let entities = Array.from(new Set(footnotes.innerText.match(/\[[^\]]+\]/g)))
+    .join(" ");
+  let footnotes_intro = $html("b", { textContent:`Footnotes ${entities}` });
+  footnotes.insertBefore($html("br"), footnotes.firstChild);
+  footnotes.insertBefore($html("br"), footnotes.firstChild);
   footnotes.insertBefore(footnotes_intro, footnotes.firstChild);
-  footnotes_intro.textContent = "Footnotes " + entities;
-  footnotes_intro.addEventListener("click", function() {
+  footnotes_intro.addEventListener("click", () => {
     footnotes.classList.toggle("expanded");
-  }, false);
+  });
 }
 
-// Actually make the reset button work
-var reset = q$(`form button[type="reset"]`);
-var textarea = q$(`form textarea`);
-if (reset && textarea) {
-  reset.addEventListener("click", function() { textarea.value = ""; });
+var textarea = q$(`form > textarea`);
+if (textarea) {
   textarea.autocapitalize = "off";	// no mobile browser auto-capitalization
+  // The Reset button reverts to the last lookup.
+  // If that's not blank, add a Clear button too.
+  if (location.search.match(/\bwords=./)) {
+    let clear = $html("button", { textContent:"Clear", type:"button" });
+    clear.addEventListener("click", () => { textarea.value = ""; });
+    textarea.parentElement.appendChild(clear);
+  }
 }
