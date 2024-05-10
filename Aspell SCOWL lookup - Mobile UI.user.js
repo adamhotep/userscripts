@@ -2,7 +2,7 @@
 // @name	Aspell SCOWL English Speller Word Lookup - Mobile & Desktop
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.1.20240509.1
+// @version	0.1.20240509.2
 // @match	*://app.aspell.net/lookup*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // @grant	none
@@ -73,15 +73,13 @@ q$(`td`, 1).forEach(td => {
 q$(`td[align]:nth-child(6)`, 1).forEach(col => {
   let freq = parseFloat(col.innerText);
   let cell = col.parentElement.children;
-  let rgb = 255;
-  if (freq < 0.01 && cell[2].innerText == "") {	// rare
-    rgb = 128 + 12800 * freq;	// 0-128 out of 255
+  if (freq < 0.01 && cell[2].innerText == "") {	// rare = blue
+    let rgb = 128 + 12700 * freq;	// 0 freq = 128, 0.01 = 1
     col.style.backgroundColor = `rgb(${rgb}, ${rgb}, 255)`;
-  } else if (freq >= 1) {	// common
-    rgb = 200 - 2 * freq;	// 0-200 out of 255, inverted
+  } else if (freq >= 1) {	// common = red
+    let rgb = 256 - 2.56 * Math.min(50, freq);	// freq 1 = 1, 50+ = 128
     col.style.backgroundColor = `rgb(255, ${rgb}, ${rgb})`;
   }
-  if (rgb < 128) { col.style.color = "#fff"; }
 });
 
 // Collapse footnotes
