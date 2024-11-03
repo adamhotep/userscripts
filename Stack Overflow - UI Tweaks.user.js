@@ -26,7 +26,8 @@
 // @include	http://answers.onstartups.com/*
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
-// @version	1.3.20231202.0
+// @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
+// @version	1.4.20241103.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -52,27 +53,9 @@
 // order to facilitate incorporation into StackExchange properties.
 // }}}
 
-// helpers {{{
-
-// Returns object(s) matched as queried via CSS
-// q$(css)           =>  document.querySelector(css)
-// q$(css, elem)     =>  elem.querySelector(css)
-// q$(css, true)     =>  document.querySelectorAll(css)
-// q$(css, elem, 1)  =>  elem.querySelectorAll(css)
-function q$(css, up = document, all = 0) { // by Adam Katz, github.com/adamhotep
-  if (all === 0 && typeof up != "object") { all = up; up = document; }
-  if (all) { return up.querySelectorAll(css); }
-  else     { return up.querySelector(css); }
-}
-
 // Stylesheet for tweaks
-var style = document.createElement("style");
-style.type = "text/css";
-style.textContent = "";
-document.head.appendChild(style);
+var style = nf.style$('/* Stack Overflow - UI Tweaks */\n');
 function addStyle(css) { style.textContent += css; }
-
-// end helpers }}}
 
 // color user badges by how high their score is {{{
 function rep2color(rep) {
@@ -92,7 +75,7 @@ function rep2color(rep) {
 }
 
 // questions and answers
-var user_info = q$(`.user-info`, 1);
+var user_info = qa$(`.user-info`);
 if (user_info) {
   addStyle(`
     .reputation_color { text-shadow: 0 0 .1em white; border-radius:.6em; }
@@ -123,7 +106,7 @@ for (let u = 0, ul = user_info.length; u < ul; u++) {
 
 // indexes and search results
 var usrcmin = "s-user-card__minimal";
-var user_rep = q$(`.${usrcmin} [title^="reputation score"]`, 1);
+var user_rep = qa$(`.${usrcmin} [title^="reputation score"]`);
 if (user_rep) {
   addStyle(`
     .${usrcmin} {
@@ -150,7 +133,7 @@ for (let u = 0, ul = user_rep.length; u < ul; u++) {
 // done coloring user badges by score }}}
 
 // code blocks: hover to widen, clickable comments links {{{
-var code_blocks = q$(`div.post-text pre, div.s-prose pre`, 1);
+var code_blocks = qa$(`div.post-text pre, div.s-prose pre`);
 if (code_blocks) {
 
   // Denote whether shift is being held
@@ -201,7 +184,7 @@ if (code_blocks) {
     body {
       /* added Linux-friendly fonts ahead of the defaults.
        * (a July 2021 SE change used a font whose spaces were too narrow) */
-      --ff-mono: "Panic Sans","Bitstream Vera Sans Mono",Inconsolata,
+      --ff-mono: Hack,"Panic Sans","Bitstream Vera Sans Mono",Inconsolata,
         "Droid Sans Mono",ui-monospace,"Cascadia Mono","Segoe UI Mono",
         "Liberation Mono",Menlo,Monaco,Consolas,monospace;
     }
@@ -229,9 +212,9 @@ if (code_blocks) {
 
     // Make links clickable.
     code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
-      // avoid (non-HTML-escaped) ampersands as well as trailing punctuation
-      /([^\w.-])(https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&])/ig,
-      '$1<a href="$2">$2</a>');
+      // avoid (non-HTML-escaped) ampersands, tags, and trailing punctuation
+      /(?!<[\w.-])https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s<>]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&]/ig,
+      '<a href="$&">$&</a>');
   }
   addStyle(`.code_block a span { color:inherit !important; }`);
 
@@ -239,7 +222,7 @@ if (code_blocks) {
 
 // collapse flagged questions when viewing > 15 questions {{{
 // (closed, on hold, dupe, etc) https://meta.stackexchange.com/q/10582/259816
-var questions = q$(`#questions h3 a[href^="/questions"]`, 1);
+var questions = qa$(`#questions h3 a[href^="/questions"]`);
 var add_question_css = false;
 for (let q = 0, ql = questions.length; ql > 15 && q < ql; q++) {
   if (questions[q].innerText.match(
@@ -279,7 +262,7 @@ if (add_question_css) {
 // Done collapsing flagged questions }}}
 
 // adblock {{{
-var sponsored = q$(`div.site-header--sponsored`, 1);
+var sponsored = qa$(`div.site-header--sponsored`);
 for (let s=0, sl=sponsored.length; s < sl; s++) {
   sponsored[s].parentElement.style.setProperty('display', 'none', 'important');
 }
@@ -297,6 +280,8 @@ addStyle(`
     /* we have to guess the scrollbar width :-(  FF w/ GTK = 24px for me */
     width:calc(80ch + 24px);	/* 80 monospace chars + scrollbar */
     scrollbar-gutter:stable;	/* always allocate space for scrollbar */
+    /* that widening has overlap issues with the sidebar. render atop: */
+    position:relative; z-index:5;
   }
 
 `); // Done with misc CSS tweaks }}}
