@@ -18,7 +18,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.4.20240401.0
+// @version	0.5.20241103.0
 // @grant	none
 // ==/UserScript==
 
@@ -31,45 +31,26 @@
      * Add an "expand/collapse all" button for collapsed Confluence content
      * Clone Jira tickets' comment-sorting button to be visible from the bottom
      * "Remember my login" should default to being checked
+     * Auto-click "log in" when on a stub page that needs you to log in
      * Gray out weekends in calendar views
      * Pre-populate Confluence's "Site Search" field given "Page Not Found"
      * Auto-collapse *jira-integration comments
      * Remove unnecessary junk in links to comments
+     * Fixed some syntax highlighting bugs
      * Probably more stuff that hasn't made it to this list
 */
 
 nf.debug("started");
 
-// helpers {{{
+var jira = ':is(#description-val, .user-content-block, .action-body)';
+var wiki = ':is(.wiki-content, #comments-section)';
+var both = jira.substr(0, jira.length - 1) + ", " + wiki.substr(4);
+// these code items are empty or have syntax highlighting & should be ignored
+var code = 'code:not(:is(:empty, .color1, .color2, .color3, .comments, '
+         + '.constants, .functions, .keyword, .number, .plain, .script, '
+         + '.spaces, .string, .preprocessor, .value, .variable))';
 
-// lots of different potential parents for given selector;
-// parents is an array by reference, args is an array of the remaining arguments
-function sel(parents, ...args) {
-  let output = "";
-  while (args.length) {
-    let child = args.shift();
-
-    // iterate through lists (prepend their items) when given them
-    if (child.indexOf(",") != -1) {
-      // don't unshift this, that prepends the array rather than its elements
-      args = child.split(/\s*,\s*/).concat(args);
-      continue;
-    }
-
-    for (let j = 0; j < parents.length; j++) {
-      if (output) output += ", ";
-      output += parents[j] + " " + child;
-    }
-  }
-  return output;
-}
-
-// end helpers }}}
-
-var jira = [ '#description-val .user-content-block', '.action-body' ];
-var wiki = [ '.wiki-content', '#comments-section' ];
-var both = jira.concat(wiki);
-var syn = ['.syntaxhighlighter.sh-eclipse', '.syntaxhighlighter.sh-confluence'];
+var syn_light = '.syntaxhighlighter:is(.sh-eclipse, .sh-confluence)';
 
 function main(where=document) { try {
 
@@ -79,46 +60,11 @@ function main(where=document) { try {
     edit_comments[c].spellcheck = true;
   }
 
-  let headings = "";
-  for (let h = 1; h < 8; h++) {
-    if (h > 1) headings += ", ";
-    headings += `h${h}[id], h${h}[name], a[name] + h${h}, h${h} + a[name]`;
-  }
-
-  let anchors = q$( sel(both, headings), where, 1 );
-  for (let a = 0; a < anchors.length; a++) {
-    let elem = anchors[a];
-    if (elem.nodeName == "A") { // deal with <h1>blah</h1><a name="this">
-      elem = elem.previousElementSibling;
-    }
-    if (! elem.innerText.match(/\S/) ) { continue; } // skip empty headings
-
-    // remove frivolous trailing <br>
-    let trailing_br = /<br>[\r\n]{0,2}<\/span>$/;
-    if (elem.innerHTML.match(trailing_br)) {
-      elem.innerHTML = elem.innerHTML.replace(trailing_br, '</span>');
-    }
-
-    let self_link = document.createElement("a");
-    let target = elem.id || elem.name;
-    if (target == "comments-section-title") { target = "comments-section"; }
-    self_link.href = "#" + target;
-    self_link.classList.add("self-link");
-    elem.classList.add("heading");
-    elem.appendChild(self_link);
-  }
-
-  // these code items are empty or have syntax highlighting & should be ignored
-  let code = 'code:not(' + [
-    ":empty", ".color1", ".color2", ".color3", ".comments", ".constants",
-    ".functions", ".keyword", ".plain", ".script", ".spaces", ".string",
-    ".preprocessor", ".value", ".variable"
-  ].join("):not(") + ")";
 
   nf.style$(`
 
     /* borders for inline monospace font elements */
-    ${ sel(jira, 'tt:not(:empty)' )}, ${ sel(wiki, code) } {
+    ${jira} tt:not(:empty), ${wiki} ${code} {
       padding:0 0.2em; margin:0 0.2em;
       /* code block borders are #bbb with radius=5px */
       border:1px dashed #bbbb; border-radius:3px;
@@ -126,27 +72,31 @@ function main(where=document) { try {
     /* I don't remember what this one is for, but it was probably
      * an older attempt at overriding the above for syntax highlighting,
      * for which I now have a better solution. Disabled for now.
-    ${ sel(both, 'div.codeContent ' + code) } {
+    ${both} div.codeContent ${code} {
       padding:0; margin:0; background:inherit;
       border:none!important; border-radius:inherit;
     }
     /**/
 
-    ${ sel(jira, 'a[href]') }				{ color:#06b; }
-    ${ sel(jira, 'a[href]:visited') }			{ color:#60b; }
-    ${ sel(jira, 'a[href]:hover', 'a[href]:active') }	{ color:#00f; }
+    ${jira} a[href]			{ color:#06b; }
+    ${jira} a[href]:visited		{ color:#60b; }
+    ${jira} a[href]:is(:active, :hover) { color:#00f; }
 
-    /* linkified anchors */
-    ${ sel(both,'.heading:not(:hover) > a.self-link') }	{ display:none; }
-    ${ sel(both, '.heading > a.self-link::after') } { /* link icon */
+    /* linkified section anchors */
+    ${both} .heading:not(:hover) > a.self-link	{ display:none; }
+    ${both} .heading > a.self-link::after {
       margin-left:0.5ex; opacity:0.667; position:absolute; content:"\\1f517";
     }
 
     /* tweaks to colors in syntax highlighter for code blocks */
-    ${ sel(syn, 'code.comments') }		{ color:#aaa; }
-    ${ sel(syn, 'code.comments a:link') } 	{ color:#aaf; }
-    ${ sel(syn, 'code.comments a:visited') }	{ color:#daf; }
-    ${ sel(syn, 'code.comments a:active') }	{ color:#00f; }
+    .syntaxhighlighter a:link:not(:hover) {
+      color:inherit!important; filter:contrast(.5) brightness(1.5);
+    }
+    ${syn_light} code.comments				{ color:#aaa!important }
+    ${syn_light} code.comments a:link			{ color:#aaf!important }
+    ${syn_light} code.comments a:visited		{ color:#daf!important }
+    ${syn_light} code.comments a:is(:active, :hover)	{ color:#00f!important }
+    .syntaxhighlighter.sh-rdark code.number		{ color:#090; }
 
     /* some odd Firefox bug makes the default monospace not work right */
     body pre, body pre *, code, kbd, td.code div	{
@@ -199,9 +149,35 @@ main(document);
 
 nf.debug("main is done");
 
+// Section anchors
+var heading = ':is(h1,h2,h3,h4,h5,h6)';
+var section = `${heading}:is([id], [name], + a[name]), a[name] + ${heading}`;
+nf.wait$(section, elem => {
+  if (elem.nodeName == "A") {	// deal with <h1>blah</h1><a name="this">
+    elem = elem.previousElementSibling;
+  }
+  if (! elem.innerText.match(/\S/) ) { return; }	// skip empty headings
+
+  // remove frivolous trailing <br>
+  let trailing_br = /<br>[\r\n]{0,2}<\/span>$/;
+  if (elem.innerHTML.match(trailing_br)) {
+    elem.innerHTML = elem.innerHTML.replace(trailing_br, '</span>');
+  }
+
+  let self_link = document.createElement("a");
+  let target = elem.id || elem.name;
+  if (target == "comments-section-title") { target = "comments-section"; }
+  self_link.href = "#" + target;
+  self_link.classList.add("self-link");
+  elem.classList.add("heading");
+  elem.appendChild(self_link);
+  nf.debug("found section", elem, "\n", self_link);
+});
+
 // for pop-ups: edit code blocks in fixed-width (the way it'll be displayed) {{{
 nf.wait$(`iframe`, elem => {
   nf.debug("loaded an iframe");
+  // TODO: update to nf.wait$() logic rather than my older wfke logic
   elem.removeAttribute("wfke_found"); // cheat wfke's been_there, use our own
   for (let f=0; f < frames.length; f++) {
     if (!frames[f].document.body.getAttribute("been_there")) {
@@ -288,12 +264,19 @@ if (comments) {
   });
 }	// }}}
 
-// Check "remember my login" by default {{{
+// Login assistance {{{
+
+// "Remember my login"
 // If you share your browser profile, you probably don't tweak with userscripts.
 // Apparently, Confluence uses 'os_cookie' to name that checkbox. WTF.
 let check = 'input[type="checkbox"]';
 let remember_me = q$(`${check}#login-form-remember-me, ${check}#os_cookie`);
 if (remember_me) { remember_me.checked = true; }
+
+// "You are not logged in ... first log in" -> click that link
+if (login = q$('.aui-message-warning a.lnk[href^="/login.jsp"]')) {
+  login.click();
+}
 // }}}
 
 // Atlassian sucks at CSS. Clean up what we can't just override. {{{
@@ -313,5 +296,14 @@ if (location.pathname.includes("/display/")
   }
 }
 // }}}
+
+// fix links in code blocks that wrongly incorporate a trailing apostrophe {{{
+nf.wait$(`code a[href$="'"]`, link => {
+  if (link?.previousSibling?.textContent == "'") {
+    link.href = link.href.replace(/(?:%27|\x27)$/, "");
+    link.innerHTML = link.innerHTML.replace(/\x27(?=$|<\/)/g, "");
+    nf.insertAfter($txt("'"), link);
+  }
+});	// }}}
 
 nf.debug("done");
