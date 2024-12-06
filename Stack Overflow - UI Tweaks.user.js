@@ -27,7 +27,7 @@
 // @include	http://meta.answers.onstartups.com/*
 // @include	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20241103.0
+// @version	1.4.20241121.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -133,8 +133,7 @@ for (let u = 0, ul = user_rep.length; u < ul; u++) {
 // done coloring user badges by score }}}
 
 // code blocks: hover to widen, clickable comments links {{{
-var code_blocks = qa$(`div.post-text pre, div.s-prose pre`);
-if (code_blocks) {
+if(q$('#question, .answer, pre')) {
 
   // Denote whether shift is being held
   let onKeyDown = function(event) {
@@ -150,14 +149,14 @@ if (code_blocks) {
   // CSS to widen on hover
   addStyle(`
 
-    /* Ensure links in code are only barely distinguishable until hovered.
-     * Uses a CSS filter b/c StackExchange sites use different color schemes */
-    ${noshift} pre.code_block a:not(:hover) {
-      /* note to self: brightness() isn't very good at text colors */
-      color:inherit; filter:brightness(1.5) sepia(50%);
+    /* comments in links */
+    ${noshift} pre.s-code-block > code a:not(:hover) .hljs-comment {
+      color:rgb(from var(--highlight-comment, #667)
+        r g calc(b + 60)) !important;
     }
-    ${noshift} pre.code_block a:not(:hover) .com { /* comments within links */
-      filter:brightness(0.75) sepia(20%);
+    ${noshift} pre.s-code-block > code a:hover .hljs-comment {
+      color:rgb(from var(--highlight-comment, #667)
+        calc(r - 60) calc(g - 60) calc(b + 180)) !important;
     }
 
     ${noshift} pre.code_block.wider:hover {
@@ -192,33 +191,33 @@ if (code_blocks) {
 
 
   // Designate which code blocks need to grow and by how much
-  for (let c = 0, cl = code_blocks.length; c < cl; c++) {
-    code_blocks[c].classList.add("code_block");
+  nf.wait$('div.post-text pre, div.s-prose pre', code_block => {
+    code_block.classList.add("code_block");
 
-    let width = code_blocks[c].scrollWidth;
-    let offset = code_blocks[c].getBoundingClientRect().x;
-    if (width && width > code_blocks[c].clientWidth) {
-      code_blocks[c].classList.add("wider");
+    let width = code_block.scrollWidth;
+    let offset = code_block.getBoundingClientRect().x;
+    if (width && width > code_block.clientWidth) {
+      code_block.classList.add("wider");
       if (offset + width > document.body.clientWidth) {
-        code_blocks[c].classList.add("widest");
+        code_block.classList.add("widest");
         // marginLeft and marginRight shift everything to the left edge
         // left moves it back to the right, except on :hover (see CSS)
         // therefore the element will be full window width
-        code_blocks[c].style.marginRight = offset + "px";	// shifted
-        code_blocks[c].style.marginLeft = -offset + "px";	// - offset
-        code_blocks[c].style.left = + offset + "px";		// + offset
+        code_block.style.marginRight = offset + "px";	// shifted
+        code_block.style.marginLeft = -offset + "px";	// - offset
+        code_block.style.left = + offset + "px";		// + offset
       }
     }
 
     // Make links clickable.
-    code_blocks[c].innerHTML = code_blocks[c].innerHTML.replace(
+    code_block.innerHTML = code_block.innerHTML.replace(
       // avoid (non-HTML-escaped) ampersands, tags, and trailing punctuation
       /(?!<[\w.-])https?:\/\/[-.\w]+\.\w{2,9}\b(?:[^&\s<>]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&]/ig,
       '<a href="$&">$&</a>');
-  }
-  addStyle(`.code_block a span { color:inherit !important; }`);
+  });
+}
 
-} // Done with code blocks }}}
+// Done with code blocks }}}
 
 // collapse flagged questions when viewing > 15 questions {{{
 // (closed, on hold, dupe, etc) https://meta.stackexchange.com/q/10582/259816
