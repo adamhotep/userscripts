@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name	Slashdot - Usability tweaks
-// @version	1.2.20241206.0
+// @version	1.2.20241208.0
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // @include	https://slashdot.org/*
@@ -202,6 +202,12 @@ function onBioBox(box) {
           /\bpermalink="([^"]+)"[^<>]*\bcontent-href="([^"]+\.(?:jpeg|png|webp|gif))"[^<>]*\bpost-title="([^"]+)"/
         );
         if (post) {
+          // unescape HTML elements in the title (e.g. `&#39;` -> `'`)
+          // ... This *should* be safe given my replacements. What do you think?
+          let title = $html('p');
+          title.innerHTML = post[3].replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          title = title.innerText;
+
           qa$('.sut_reddit.empty').forEach(elem => {
             elem.classList.remove('empty');
             elem.append($html('p', {},
