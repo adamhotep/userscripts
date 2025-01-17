@@ -2,32 +2,32 @@
 // @name	Stack Overflow - UI Tweaks
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Blue<->red user badges by reputation, wide code, hide flagged Qs
-// @include	https://stackoverflow.com/*
-// @include	https://serverfault.com/*
-// @include	https://superuser.com/*
-// @include	https://meta.stackoverflow.com/*
-// @include	https://meta.serverfault.com/*
-// @include	https://meta.superuser.com/*
-// @include	https://*.stackexchange.com/*
-// @include	https://askubuntu.com/*
-// @include	https://meta.askubuntu.com/*
-// @include	https://answers.onstartups.com/*
-// @include	https://meta.answers.onstartups.com/*
-// @include	https://mathoverflow.net/*
-// @include	http://stackoverflow.com/*
-// @include	http://serverfault.com/*
-// @include	http://superuser.com/*
-// @include	http://meta.stackoverflow.com/*
-// @include	http://meta.serverfault.com/*
-// @include	http://meta.superuser.com/*
-// @include	http://*.stackexchange.com/*
-// @include	http://askubuntu.com/*
-// @include	http://meta.askubuntu.com/*
-// @include	http://answers.onstartups.com/*
-// @include	http://meta.answers.onstartups.com/*
-// @include	http://mathoverflow.net/*
+// @match	https://stackoverflow.com/*
+// @match	https://serverfault.com/*
+// @match	https://superuser.com/*
+// @match	https://meta.stackoverflow.com/*
+// @match	https://meta.serverfault.com/*
+// @match	https://meta.superuser.com/*
+// @match	https://*.stackexchange.com/*
+// @match	https://askubuntu.com/*
+// @match	https://meta.askubuntu.com/*
+// @match	https://answers.onstartups.com/*
+// @match	https://meta.answers.onstartups.com/*
+// @match	https://mathoverflow.net/*
+// @match	http://stackoverflow.com/*
+// @match	http://serverfault.com/*
+// @match	http://superuser.com/*
+// @match	http://meta.stackoverflow.com/*
+// @match	http://meta.serverfault.com/*
+// @match	http://meta.superuser.com/*
+// @match	http://*.stackexchange.com/*
+// @match	http://askubuntu.com/*
+// @match	http://meta.askubuntu.com/*
+// @match	http://answers.onstartups.com/*
+// @match	http://meta.answers.onstartups.com/*
+// @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20241121.0
+// @version	1.4.20250117.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -151,16 +151,17 @@ if(q$('#question, .answer, pre')) {
 
     /* comments in links */
     ${noshift} pre.s-code-block > code a:not(:hover) .hljs-comment {
-      color:rgb(from var(--highlight-comment, #667)
+      color:rgb(from var(--highlight-comment, light-dark(#667, #999))
         r g calc(b + 60)) !important;
     }
     ${noshift} pre.s-code-block > code a:hover .hljs-comment {
-      color:rgb(from var(--highlight-comment, #667)
+      color:rgb(from var(--highlight-comment, light-dark(#667, #999))
         calc(r - 60) calc(g - 60) calc(b + 180)) !important;
     }
 
     ${noshift} pre.code_block.wider:hover {
-      background-color:#eeee;		/* a tiny bit of transparency */
+      background:rgb(from var(--highlight-bg, light-dark(#f6f6f6, #1d1b1b))
+        r g b / calc(alpha - .1));
       position:relative; z-index:9;	/* don't disrupt later elements */
       /* This previously used overflow-x:scroll but box-sizing:border-box fails
        * to account for the scrollbar even though it was previously present,
@@ -205,7 +206,7 @@ if(q$('#question, .answer, pre')) {
         // therefore the element will be full window width
         code_block.style.marginRight = offset + "px";	// shifted
         code_block.style.marginLeft = -offset + "px";	// - offset
-        code_block.style.left = + offset + "px";		// + offset
+        code_block.style.left = + offset + "px";	// + offset
       }
     }
 
@@ -271,7 +272,7 @@ for (let s=0, sl=sponsored.length; s < sl; s++) {
 addStyle(`
 
   .deleted-answer pre, .deleted-answer pre code {
-    background-color:var(--black-050);
+    background-color:var(--black-050, light-dark(#fff, #252627));
   }
   .s-table-container .s-table td { padding:1px 1ex; }
 
