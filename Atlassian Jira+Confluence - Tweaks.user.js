@@ -18,7 +18,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20241103.0
+// @version	0.5.20250118.0
 // @grant	none
 // ==/UserScript==
 
@@ -50,7 +50,8 @@ var code = 'code:not(:is(:empty, .color1, .color2, .color3, .comments, '
          + '.constants, .functions, .keyword, .number, .plain, .script, '
          + '.spaces, .string, .preprocessor, .value, .variable))';
 
-var syn_light = '.syntaxhighlighter:is(.sh-eclipse, .sh-confluence)';
+var syn_comment
+  = '.syntaxhighlighter:is(.sh-eclipse, .sh-confluence) code.comments';
 
 function main(where=document) { try {
 
@@ -66,8 +67,8 @@ function main(where=document) { try {
     /* borders for inline monospace font elements */
     ${jira} tt:not(:empty), ${wiki} ${code} {
       padding:0 0.2em; margin:0 0.2em;
-      /* code block borders are #bbb with radius=5px */
-      border:1px dashed #bbbb; border-radius:3px;
+      /* code block borders are gray with radius=5px */
+      border:1px dashed light-dark(#bbbb, #666b); border-radius:3px;
     }
     /* I don't remember what this one is for, but it was probably
      * an older attempt at overriding the above for syntax highlighting,
@@ -78,9 +79,9 @@ function main(where=document) { try {
     }
     /**/
 
-    ${jira} a[href]			{ color:#06b; }
-    ${jira} a[href]:visited		{ color:#60b; }
-    ${jira} a[href]:is(:active, :hover) { color:#00f; }
+    ${jira} a[href]			{ color:light-dark(#06b, #5bf); }
+    ${jira} a[href]:visited		{ color:light-dark(#60b, #eae); }
+    ${jira} a[href]:is(:active, :hover) { color:light-dark(#b00, #f65); }
 
     /* linkified section anchors */
     ${both} .heading:not(:hover) > a.self-link	{ display:none; }
@@ -92,11 +93,11 @@ function main(where=document) { try {
     .syntaxhighlighter a:link:not(:hover) {
       color:inherit!important; filter:contrast(.5) brightness(1.5);
     }
-    ${syn_light} code.comments				{ color:#aaa!important }
-    ${syn_light} code.comments a:link			{ color:#aaf!important }
-    ${syn_light} code.comments a:visited		{ color:#daf!important }
-    ${syn_light} code.comments a:is(:active, :hover)	{ color:#00f!important }
-    .syntaxhighlighter.sh-rdark code.number		{ color:#090; }
+    ${syn_comment}		{ color:light-dark(#aaa, #777)!important }
+    ${syn_comment} a:link	{ color:light-dark(#aaf, #55f)!important }
+    ${syn_comment} a:visited	{ color:light-dark(#daf, #d8d)!important }
+    ${syn_comment} a:is(:active, :hover)	{ color:#b00!important }
+    .syntaxhighlighter.sh-rdark code.number	{ color:#090; }
 
     /* some odd Firefox bug makes the default monospace not work right */
     body pre, body pre *, code, kbd, td.code div	{
@@ -112,7 +113,7 @@ function main(where=document) { try {
     /* gray the weekends in calendar month views */
     .plugin-calendar .fc .fc-view-month .fc-sun,
     .plugin-calendar .fc .fc-view-month .fc-sat {
-      background-color:#f4f5f7;
+      background-color:#aaa1;
     }
     .plugin-calendar .fc .fc-view-month .fc-sun .fc-day-number,
     .plugin-calendar .fc .fc-view-month .fc-sat .fc-day-number {
