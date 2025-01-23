@@ -27,7 +27,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20250117.0
+// @version	1.4.20250122.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -78,7 +78,7 @@ function rep2color(rep) {
 var user_info = qa$(`.user-info`);
 if (user_info) {
   addStyle(`
-    .reputation_color { text-shadow: 0 0 .1em white; border-radius:.6em; }
+    .reputation_color { text-shadow: 0 0 .1em Canvas; border-radius:.6em; }
     .reputation_color:hover {
       background-color:transparent!important;
       transition:background-color 1s;
@@ -110,10 +110,13 @@ var user_rep = qa$(`.${usrcmin} [title^="reputation score"]`);
 if (user_rep) {
   addStyle(`
     .${usrcmin} {
-      /* attr(foo, color) is too new: https://bugzil.la/1448251 */
-      /* background-color: attr(data-bgcolor, color, transparent); */
+      /* can't yet do 'background-color:attr(data-bgcolor, color, transparent)'
+         (as of 2025-01-22, requested in 2018 at https://bugzil.la/1448251)
+         https://developer.mozilla.org/en-US/docs/Web/CSS/attr notes <color>
+         isn't yet supported and using this outside 'content' is experimental.
+       */
       padding:0.3em 0.5em !important; border-radius:0.6em;
-      text-shadow: 0 0 0.1em white;
+      text-shadow: 0 0 0.1em Canvas;
     }
     .${usrcmin}:hover {
       background-color: transparent!important; transition:background-color 1s;
@@ -270,6 +273,8 @@ for (let s=0, sl=sponsored.length; s < sl; s++) {
 
 // Misc CSS tweaks {{{
 addStyle(`
+
+  :root { color-scheme:light dark; }	/* make Canvas and CanvasText work */
 
   .deleted-answer pre, .deleted-answer pre code {
     background-color:var(--black-050, light-dark(#fff, #252627));

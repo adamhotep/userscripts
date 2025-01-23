@@ -8,7 +8,7 @@
 // @grant	GM.info
 // @grant	GM_info
 // @author	Adam Katz
-// @version	1.2.20250110.0
+// @version	1.2.20250118.0
 // ==/UserScript==
 
 /******************************************************************************\
@@ -150,7 +150,6 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
       setup.textContent = '👥';
       setup.title = "Github UI Tweaks (NOT official!): \n"
         + "Configure alternate host for multi-user support";
-      setup.style.cursor = 'pointer';
       setup.addEventListener('click', () => { dialog.open(); });
 
       let $code = text => $html('code', { text:text });
@@ -338,18 +337,22 @@ nf.style$(`
     #cloner.ghuit-noalt #work-clone,
     #cloner:not(:has(a[aria-current="page"] > [data-content="SSH"])) #work-clone
     { display:none !important; }
-  #setup-althost { margin-right:1ex; color:var(--fgColor-accent, #16d); }
+  #setup-althost
+  { margin-right:1ex; color:var(--fgColor-accent, light-dark(#16d, #49f));
+    cursor:pointer; text-decoration:none; }
   #setup-althost:not(:hover) { color:initial; filter:saturate(20%); }
   #work-clone:hover, ${personal_clone}:hover { opacity:1; }
   /* multi-ssh-account dialog */
   #multi-ssh { font-size:0.8rem; width:max(40vw, 40em); }
   #multi-ssh.nfDialog .nfDialogHead { font-size:1rem; }
+  #multi-ssh .nfDialogBody *:not(pre) > code, #multi-ssh pre:has(> code),
+    #multi-ssh .nfDialogBody label:hover
+    { background:light-dark(#fff8, #0008); }
   #multi-ssh .nfDialogBody *:not(pre) > code, #multi-ssh pre:has(> code)
-    { border:1px dashed var(--bg2); background:#fff8; }
+    { border:1px dashed var(--bg2); }
   #multi-ssh.nfDialog .nfDialogBody *:not(pre) > code { padding:0 0.4ex; }
   #multi-ssh .nfDialogBody label
     { display:block; border-radius:1ex; padding:0.75ex 0.5ex; }
-  #multi-ssh .nfDialogBody label:hover { background:#fff8; }
   #multi-ssh .nfDialogBody label > div:first-child
     { display:inline-block; width:18em; }
   #multi-ssh .nfDialogBody label input[type="text"] { width:16em; }
@@ -357,7 +360,7 @@ nf.style$(`
   #multi-ssh #ghuit_buttons { text-align:right; padding:0 1ex; margin:0; }
   #multi-ssh pre:has(> code) { margin:0 1em; padding:1ex; }
   #multi-ssh pre > code.ssh_config b
-    { color:var(--color-prettylights-syntax-entity, #6639ba);
+    { color:var(--color-prettylights-syntax-entity, light-dark(#63b, #daf));
       font-weight:normal; text-shadow:0 0 0.01ex currentColor; }
   #multi-ssh .small { font-size:85%; }
   #multi-ssh .nfDialogBody .firefox-only { display:none; }
