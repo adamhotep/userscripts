@@ -2,7 +2,7 @@
 // @name	Wordnik - Link to other dictionaries
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.5.20230302.0
+// @version	0.6.20250123.0
 // @include	https://www.wordnik.com/words/*
 // @require	https://git.io/waitForKeyElements.js
 // @grant	GM_addStyle
@@ -172,9 +172,15 @@ if (term && up) {
 
   let others = addSection("Other");
 
+  let wikipedia = "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=";
   addLink(others,
-    "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + term,
-    "Wikipedia", "User-driven general encyclopedia"
+    wikipedia + term, "Wikipedia", "User-driven general encyclopedia"
+  );
+
+  let disam = " (disambiguation)";
+  addLink(others,
+    wikipedia + term + disam,
+    "Wikipedia" + disam, "User-driven general encyclopedia"
   );
 
   addLink(others,
@@ -234,15 +240,18 @@ css.textContent = /* syn=css */ `
 
 .content		{ padding-left:7em; }
 #wnkxtra_hidden 	{ display:none; }
-#wnkxtra_x		{ float:right; border:1px solid #bbb; color:#aaa;
-			  border-radius:1em; width:1.2em; text-align:center;
-			  cursor:pointer; }
-#wnkxtra_hidden:checked + #wnkxtra	{ width:1em; height:1em; overflow:hidden; }
+#wnkxtra_x { float:right; border:1px solid light-dark(#bbb, #444);
+  color:light-dark(#aaa, #666); border-radius:1em; width:1.2em;
+  margin:-.15ex .3ex 0 0; text-align:center; cursor:pointer; }
+#wnkxtra_hidden:checked + #wnkxtra { width:1em; max-height:1.2em;
+  transition:max-height .2s ease-out, width .5s ease-out; }
 #wnkxtra_hidden + #wnkxtra #wnkxtra_x:after		{ content: "−"; }
 #wnkxtra_hidden:checked + #wnkxtra #wnkxtra_x:after	{ content: "+"; }
-#wnkxtra		{ float:right; width:100%; color:#777; background:#fff8;
-			  border:1px solid #eee; border-radius:1ex;
-			  margin:3em 0 0 .5ex; padding:1ex 1ex 1ex 2ex; }
+#wnkxtra { float:right; width:100%; color:light-dark(#777, #aaa);
+  background:light-dark(#fff8, #0008); border:1px solid light-dark(#eee, #333);
+  border-radius:1ex; margin:3em 0 0 .5ex; padding:1ex 1ex 1ex 2ex;
+  max-height:300vh; overflow:hidden;
+  transition:max-height .5s ease-in, width .2s ease-in; }
 #wnkxtra ul			{ clear:right; float:left; width:50%; }
 #wnkxtra ul.Other		{ clear:both; width:100%; }
 #wnkxtra li			{ list-style-type:none; line-height:1em; }
@@ -253,7 +262,7 @@ css.textContent = /* syn=css */ `
 #wnkxtra .startpage_image	{ display:block; margin-top:3px; }
 #wnkxtra .startpage_image:not(:hover)	{ max-width:100%; }
 #wnkxtra + *			{ clear:right; }
-xref > a			{ color:#148; }
+xref > a			{ color:light-dark(#049, #adf) }
 
 `;
 document.head.appendChild(css);
