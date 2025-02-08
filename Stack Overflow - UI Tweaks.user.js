@@ -27,7 +27,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20250122.0
+// @version	1.4.20250124.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -163,7 +163,9 @@ if(q$('#question, .answer, pre')) {
     }
 
     ${noshift} pre.code_block.wider:hover {
-      background:rgb(from var(--highlight-bg, light-dark(#f6f6f6, #1d1b1b))
+      /* Explicit use of Dark Reader var is needed here (race condition?) */
+      background:rgb(from var(--darkreader-bg--highlight-bg,
+        var(--highlight-bg, light-dark(#f6f6f6, #1d1b1b)))
         r g b / calc(alpha - .1));
       position:relative; z-index:9;	/* don't disrupt later elements */
       /* This previously used overflow-x:scroll but box-sizing:border-box fails
