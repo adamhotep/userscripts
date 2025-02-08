@@ -8,7 +8,7 @@
 // @grant	GM.info
 // @grant	GM_info
 // @author	Adam Katz
-// @version	1.2.20250118.0
+// @version	1.2.20250208.0
 // ==/UserScript==
 
 /******************************************************************************\
@@ -19,9 +19,9 @@
  Further installation instructions: https://github.com/adamhotep/userscripts
 
  To configure this script for easier cloning across multiple SSH accounts,
- click Github's green `<> Code` button on any repository and then click the
- 👥 (people, aka "busts in silhouette") button at the top right of the `Local`
- tab. That will open this script's dialog, which will guide through the rest.
+ click Github's green `<> Code` button on any repository, switch to SSH, and
+ then click the 👥 (people, aka "busts in silhouette") button at the top right.
+ That will open this script's dialog, which will guide through the rest.
 
 \*****************************************************************************/
 
@@ -52,7 +52,7 @@ var plc = document.querySelectorAll(".pl-c");
 for (var c = 0, cl = plc.length; c < cl; c++) {
   plc[c].innerHTML = plc[c].innerHTML
     // avoids ampersands (escaped ampersands are okay) and trailing punctuation
-    .replace(/\b(https?:\/\/(?:[^&\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&*])/ig,
+    .replace(/\b(https?:\/\/(?:[^&<>"'\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&*])/ig,
              '<a href="$1">$1</a>');
 }
 
@@ -328,6 +328,8 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
 
 
 nf.style$(`
+  /* links in comments (colors are literally 33% from comment, 67% link) */
+  .pl-c a:not(:hover) { color:light-dark(#3e6792, #7796be); }
 
   /* Linux/X11 Firefox font tweak for fixed-width code segments */
   .CodeMirror-sizer pre { font-family:monospace !important; }
