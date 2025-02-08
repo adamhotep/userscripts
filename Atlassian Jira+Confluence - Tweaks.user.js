@@ -18,7 +18,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20250118.0
+// @version	0.5.20250126.0
 // @grant	none
 // ==/UserScript==
 
@@ -306,5 +306,31 @@ nf.wait$(`code a[href$="'"]`, link => {
     nf.insertAfter($txt("'"), link);
   }
 });	// }}}
+
+// Favicon calendar support for dark/light browser theme, (not dark/light mode!)
+// It's neat that Confluence generates the favicon with the day,
+// but they shouldn't generate PNGs when they could use SVG instead.
+nf.wait$(`link[rel~="icon"][href^="data:image/png"]`, favicon => {
+  if (!q$('#add-calendar-button')) return;
+  let day = (new Date().getUTCDate());
+  // I can't seem to get the SVG to play nice in `utf8` format, so failing over
+  // to base64. Alternative: `"...;utf8," + encodeURIComponent(...)`
+  // Yes, this could be smaller if I remove the viewbox and transform,
+  // but I'm not interested in recalculating all the coordinates and sizes.
+  // Adapted from https://www.svgrepo.com/svg/358659/calendar (CC0-license)
+  // with lots of changes. This derivative is GPLv3+.
+  favicon.href = "data:image/svg+xml;base64," + btoa(/* syn=svg */ `
+    <svg width="448" height="448" viewBox="13 10 440 438"
+        xmlns="http://www.w3.org/2000/svg"
+        style="font:bold 256px Arial, sans-serif;fill:#000">
+      <rect style="fill:#fffa" width="400" height="289" x="31" y="142" ry="0" />
+      <g transform="matrix(1.04,0,0,1,-9.1,5.5)">
+        <path d="m 126,4 c -25,0 -45,21 -45,47 V 67 H 51 c -17,0 -30,14 -30,32 V 415 c 0,18 14,32 30,32 H 414 c 17,0 30,-14 30,-32 V 99 c 0,-18 -14,-32 -30,-32 H 384 V 52 c 0,-26 -20,-47 -45,-47 -25,0 -45,21 -45,47 V 67 H 172 V 52 c 0,-26 -20,-47 -45,-47 z m 0,32 c 8,0 15,7 15,16 v 47 c 0,9 -7,16 -15,16 -8,0 -15,-7 -15,-16 V 52 c 0,-9 7,-16 15,-16 z m 212,0 c 8,0 15,7 15,16 v 47 c 0,9 -7,16 -15,16 -8,0 -15,-7 -15,-16 V 52 c 0,-9 7,-16 15,-16 z M 51,162 H 414 V 415 H 51 Z"/>
+      </g>
+      <text x="53%" y="89%" text-anchor="middle" dominant-baseline="no-change">
+        ${day}
+      </text>
+    </svg>`);
+});
 
 nf.debug("done");
