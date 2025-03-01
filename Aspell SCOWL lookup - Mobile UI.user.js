@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name	Aspell SCOWL English Speller Word Lookup - Mobile & Desktop
 // @namespace	https://github.com/adamhotep/userscripts
+// @icon	data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size:26px'><text x='15%' y='75%'>📕</text></svg>
 // @author	Adam Katz
-// @version	0.1.20240509.2
+// @version	0.1.20250212.1
 // @match	*://app.aspell.net/lookup*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // @grant	none
@@ -22,6 +23,10 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <https://www.gnu.org/licenses/>. }}}
+
+// Enable dark mode, let Dark Reader know we've got it
+document.head.append($html('meta',
+  { name:'color-scheme', content:'light dark' }));
 
 var style = nf.style$(`
 
