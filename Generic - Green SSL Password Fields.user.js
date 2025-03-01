@@ -6,7 +6,7 @@
 // @grant          GM_addStyle
 // @icon           https://raw.githubusercontent.com/adamhotep/userscripts/master/icons/Generic%20-%20Green%20SSL%20Password%20Fields.png
 // @author         Adam Katz
-// @version        0.7.1.20190720
+// @version        0.7.20250214.0
 // @license        GPL
 // ==/UserScript==
 /* 
@@ -22,8 +22,9 @@
  * Beerware: If you think this is worth it, you are welcome to buy me a beer.
  */ 
 
-const ssl_bg   = "#afb";  // green background for password fields with SSL
-const plain_bg = "#fcb";  // red background for password fields without SSL
+const fg       = "light-dark(#000, #fff)";  // black or white based on theme
+const ssl_bg   = "light-dark(#afb, #042)";  // green for SSL password fields
+const plain_bg = "light-dark(#fcb, #422)";  // red for non-SSL password fields
 
 const pw_field = 'input[type="password"]';
 var rel_ssl = rel_plain = '';
@@ -45,7 +46,9 @@ if (typeof GM_addStyle == 'undefined') {
 } // end GM_addStyle }}}
 
 function pwcss(sel, rgb) {
-  return `${sel} ${pw_field} { color:#000; background:${rgb}!important; }\n`;
+  return `  ${sel} ${pw_field} {
+    color:${fg}!important; background:${rgb}!important;
+  }\n`;
 }
 
 if (location.protocol == "https:") { rel_ssl   = pw_field + ", "; }
