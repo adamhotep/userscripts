@@ -2,6 +2,7 @@
 // @name	Stack Overflow - UI Tweaks
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Blue<->red user badges by reputation, wide code, hide flagged Qs
+// @icon	https://stackexchange.com/favicon.ico
 // @match	https://stackoverflow.com/*
 // @match	https://serverfault.com/*
 // @match	https://superuser.com/*
@@ -27,7 +28,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20250124.0
+// @version	1.4.20250210.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -277,6 +278,17 @@ for (let s=0, sl=sponsored.length; s < sl; s++) {
 addStyle(`
 
   :root { color-scheme:light dark; }	/* make Canvas and CanvasText work */
+
+  /* Colored Stack Overflow logo */
+  @media ( prefers-color-scheme: dark ) {
+    body.theme-system .s-topbar .s-topbar--logo .-img {
+      filter:invert() hue-rotate(180deg)!important;
+    }
+    .theme-system header {
+      --theme-topbar-background-color:#0c0d0ed2;
+      backdrop-filter:blur(.5ex);
+    }
+  }
 
   .deleted-answer pre, .deleted-answer pre code {
     background-color:var(--black-050, light-dark(#fff, #252627));
