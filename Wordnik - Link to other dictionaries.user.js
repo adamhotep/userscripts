@@ -2,10 +2,10 @@
 // @name	Wordnik - Link to other dictionaries
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	0.6.20250123.0
+// @version	0.7.20250211.0
+// @icon	https://wordnik.com/favicon.ico
 // @include	https://www.wordnik.com/words/*
-// @require	https://git.io/waitForKeyElements.js
-// @grant	GM_addStyle
+// @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // ==/UserScript==
@@ -28,62 +28,40 @@
 //// Greasemonkey 4 changed a lot. Here are some GM 3->4 compatibilty shims. {{{
 
 if (typeof GM_xmlhttpRequest == 'undefined'
-    && GM && typeof GM.xmlHttpRequest == 'function') {
+&& GM && typeof GM.xmlHttpRequest == 'function') {
   var GM_xmlhttpRequest = GM.xmlHttpRequest;
-}
-
-// This GM_addStyle implementation is slightly modified from the GM 3->4 shim at
-// https://arantius.com/misc/greasemonkey/imports/greasemonkey4-polyfill.js
-if (typeof GM_addStyle == 'undefined') {
-  function GM_addStyle(aCss) {
-    'use strict';
-    let head = document.head;
-    if (head) {
-      let style = document.createElement('style');
-      style.setAttribute('type', 'text/css');
-      style.textContent = aCss;
-      head.appendChild(style);
-      return style;
-    }
-    return null;
-  }
 }
 
 //// }}} end GM compatibility shims
 
 // linkify cross-references (why doesn't Wordnik do this?)
-waitForKeyElements('xref', function(xref) {
-  let link = document.createElement("a");
-  link.textContent = xref.innerText;
+nf.wait$('xref', function(xref) {
+  let text = xref.innerText;
   xref.textContent = "";
-  xref.appendChild(link);
-  link.href = "/words/" + link.textContent;
+  xref.appendChild($html('a', { text:text, href:"/words/" + text }));
 });
 
 var term = location.pathname.substr(7); // remove the "/words/" prefix
 term = term.replace(/\/$/, '');
-var extra = document.createElement("div");
+var extra = $html("div");
 
-Node.prototype.prependChild = function(elem) {
-  if (this.childElementCount == 0) { return this.appendChild(elem); }
-  return this.insertBefore(elem, this.firstElementChild);
+const prependChild = (up, elem) => {
+  if (up.childElementCount == 0) { return up.appendChild(elem); }
+  return up.insertBefore(elem, up.firstElementChild);
 }
 
 function addSection(header) {
-  let section = document.createElement("ul");
-  section.classList.add(header.replace(/\W+/g, "_"));
-  let item = document.createElement("li");
+  let section = $html("ul", { class:header.replace(/\W+/g, "_") });
+  let item = $html("li", { class:'h' });
   item.append(header);
-  item.classList.add("h");
   section.appendChild(item);
   extra.appendChild(section);
   return section;
 }
 
 function addLink(section, href, text, title="") {
-  let item = document.createElement("li");
-  let link = document.createElement("a");
-  link.href = href;
+  let item = $html('li', { class:'i' });
+  let link = $html('a', { href:href });
   if (title) { link.title = title; }
   link.append(text);
   item.appendChild(link);
@@ -91,23 +69,18 @@ function addLink(section, href, text, title="") {
 }
 
 
-//var up = document.querySelector(".word_page");
-var up = document.querySelector(".module-2columnRight");
+var up = q$(".module-2columnRight");
 if (term && up) {
 
-  up.prependChild(extra);
+  prependChild(up, extra);
 
   // close button
-  let checker = document.createElement("input");
-  checker.type = "checkbox";
+  let checker = $html('input', { type:'checkbox', id:'wnkxtra_hidden' });
   checker.checked = false;
-  checker.id = "wnkxtra_hidden";
   up.insertBefore(checker, extra);
-  let x = document.createElement("label");
-  x.id = "wnkxtra_x";
+  let x = $html("label", { id:'wnkxtra_x', title:"shrink/grow" });
   x.htmlFor = checker.id;
-  x.title = "shrink/grow";
-  extra.prependChild(x);
+  prependChild(extra, x);
 
   extra.id = "wnkxtra";
 
@@ -199,34 +172,46 @@ if (term && up) {
     "DuckDuckGo Web"
   );
   addLink(others,
-    "https://duckduckgo.com/?ko=s&kp=-1&kw=w&kd=-1&ia=images&iax=1&q=" + term,
+    "https://duckduckgo.com/?ko=s&kp=-1&kw=w&kd=-1&ia=images&iax=images&q="
+    + term,
     "DuckDuckGo Images"
   );
 
   img_link = addLink(others,
-    "https://www.startpage.com/do/search?cat=pics&query=" + term,
+    "https://www.startpage.com/sp/search?cat=images&query=" + term,
     "Google Images"
   ).childNodes[0];
   img_link.id = "img_link";
   img_link.title = "Google Images via Startpage.com";
+
+  // https://wiki.greasespot.net/index.php?title=GM.xmlHttpRequest#GET_request
   GM_xmlhttpRequest({
     method: 'GET',
     url: img_link.href,
-    onload: function(response) {
-      let dom = response.responseXML;
-      // https://wiki.greasespot.net/index.php?title=GM.xmlHttpRequest#GET_request
+    onload: function(resp) {
+      let dom = resp.responseXML;
       if (!dom) {
-        dom = new DOMParser()
-          .parseFromString(response.responseText, "text/html");
+        dom = new DOMParser().parseFromString(resp.responseText, "text/html");
       }
       dom = dom.body;
-      let img = dom.querySelector(`img.image-thumbnail[src]`);
+      console.log(dom);
+      let img = q$(`#main .image-main-container img[src]:not([src=""])`, dom);
+      console.log(img?.src, img);
       if (img) {
-        let new_img = document.createElement("img");
-        new_img.loading = "lazy";
-        new_img.title = "First Google Image hit (anonymized by Startpage.com)";
-        new_img.src = img.src.replace(location.host, "www.startpage.com");
-        new_img.classList.add("startpage_image");
+        let new_img = $html('img', { loading:'lazy', class:'search_image' });
+        new_img.title = "First Google Image hit";
+        if (img.src.startsWith('data:image/')) {
+          new_img.src = img.src;
+        } else {
+          GM_xmlhttpRequest({
+            method: 'GET',
+            // re-home to the remote host, not the current one
+            url: img.src.replace(location.host, "www.startpage.com"),
+            responseType: 'blob',
+            onload: e => { new_img.src = URL.createObjectURL(e.response); }
+          });
+        }
+        if (img.title) { new_img.title += ": " + img.title; }
         img_link.appendChild(new_img);
       }
     }
@@ -234,9 +219,7 @@ if (term && up) {
 
 }
 
-var css = document.createElement("style");
-css.type = "text/css";
-css.textContent = /* syn=css */ `
+nf.style$(`
 
 .content		{ padding-left:7em; }
 #wnkxtra_hidden 	{ display:none; }
@@ -252,17 +235,18 @@ css.textContent = /* syn=css */ `
   border-radius:1ex; margin:3em 0 0 .5ex; padding:1ex 1ex 1ex 2ex;
   max-height:300vh; overflow:hidden;
   transition:max-height .5s ease-in, width .2s ease-in; }
-#wnkxtra ul			{ clear:right; float:left; width:50%; }
-#wnkxtra ul.Other		{ clear:both; width:100%; }
-#wnkxtra li			{ list-style-type:none; line-height:1em; }
-#wnkxtra li.h			{ font-weight:bold; margin:3ex 0 0 -1ex; }
-#wnkxtra li:not(.h)::before	{ content:"🠞"; padding-right:.2em; }
-#wnkxtra a			{ text-decoration:none; }
-#wnkxtra a:hover 		{ text-decoration:underline; }
-#wnkxtra .startpage_image	{ display:block; margin-top:3px; }
-#wnkxtra .startpage_image:not(:hover)	{ max-width:100%; }
-#wnkxtra + *			{ clear:right; }
-xref > a			{ color:light-dark(#049, #adf) }
+#wnkxtra ul		{ clear:right; float:left; width:50%; }
+#wnkxtra ul.Other	{ clear:both; width:100%; }
+#wnkxtra li		{ list-style-type:none; line-height:1em; }
+#wnkxtra li.h		{ font-weight:bold; margin:3ex 0 0 -1ex; }
+#wnkxtra li.i::before	{ content:"🠞"; padding-right:.2em; }
+#wnkxtra a		{ text-decoration:none; }
+#wnkxtra a:hover 	{ text-decoration:underline; }
+#wnkxtra .search_image	{ display:block; margin-top:3px; max-width:100%; }
+#wnkxtra + *		{ clear:right; }
+xref > a		{ color:light-dark(#049, #adf) }
 
-`;
-document.head.appendChild(css);
+/* misc site tweaks */
+form.search-box input[type="text"] { font-size:1rem; margin-top:.25rem; }
+
+`);
