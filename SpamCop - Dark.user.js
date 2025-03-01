@@ -2,7 +2,8 @@
 // @name	SpamCop - Dark theme
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	1.1.20250208.0
+// @version	1.1.20250208.1
+// @icon	https://www.spamcop.net/images/favicon.ico
 // @include	https://*.spamcop.net/*
 // @include	https://spamcop.net/*
 // @grant	none

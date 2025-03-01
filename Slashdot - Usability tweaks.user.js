@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name	Slashdot - Usability tweaks
-// @version	1.2.20241208.0
+// @version	1.2.20241208.1
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
+// @icon	https://slashdot.org/favicon.ico
 // @include	https://slashdot.org/*
 // @include	https://*.slashdot.org/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js

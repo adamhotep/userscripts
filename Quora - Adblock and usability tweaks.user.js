@@ -3,7 +3,8 @@
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Bypass login, hold "Still have a question?" below answers
 // @include	https://www.quora.com/*
-// @version	0.3.20221019
+// @icon	https://www.quora.com/favicon.ico
+// @version	0.3.20221019.1
 // @grant	GM_addStyle
 // ==/UserScript==
 

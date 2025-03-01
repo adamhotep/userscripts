@@ -1,18 +1,19 @@
 // ==UserScript==
-// @name          xkcd - tweaks for text and navigation
-// @namespace     https://github.com/adamhotep/userscripts
-// @description   Hidden text below images, archive dates, keyboard navigation
-// @author        Adam Katz
-// @include       http://xkcd.com/*
-// @include       http://www.xkcd.com/*
-// @include       https://xkcd.com/*
-// @include       https://www.xkcd.com/*
-// @grant         GM_addStyle
-// @version       1.4.2.20190121
-// @license       AGPL
+// @name	xkcd - tweaks for text and navigation
+// @namespace	https://github.com/adamhotep/userscripts
+// @description	Hidden text below images, archive dates, keyboard navigation
+// @author	Adam Katz
+// @match	http://xkcd.com/*
+// @match	http://www.xkcd.com/*
+// @match	https://xkcd.com/*
+// @match	https://www.xkcd.com/*
+// @icon	https://xkcd.com/favicon.ico
+// @grant	GM_addStyle
+// @version	1.4.20190121.1
+// @license	AGPL
 // ==/UserScript==
 
-/* 
+/*
  * Features:
  *   - Keyboard navigation:
  *     - left arrow: previous comic
@@ -29,7 +30,7 @@
  * it will be useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License at <http://www.gnu.org/licenses>.
- */ 
+ */
 
 // This was inspired by riddle's "xkcd titles" script from way back in the day.
 // https://userscripts-mirror.org/scripts/show/6080

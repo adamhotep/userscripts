@@ -3,12 +3,13 @@
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	Adds zoomable thumbnail for each story link
 // @author	Adam Katz
+// @icon	https://slashdot.org/favicon.ico
 // @include	https://slashdot.org/*
 // @include	https://*.slashdot.org/*
 // @require	https://git.io/waitForKeyElements.js
 // @installURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
 // @downloadURL https://github.com/adamhotep/userscripts/raw/master/Slashdot%20-%20Story%20images.user.js
-// @version	2.2.1.20240331
+// @version	2.2.20240331.2
 // @grant	GM_addStyle
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest

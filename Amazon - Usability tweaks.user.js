@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name	Amazon - Usability tweaks
-// @include	https://*.amazon.com/*
-// @include	https://amazon.com/*
+// @icon	https://www.amazon.com/favicon.ico
+// @match	https://*.amazon.com/*
+// @match	https://amazon.com/*
 // @description	Make sponsored items less visible unless hovered over
-// @version	1.0.20220203
+// @version	1.0.20220203.1
 // @grant	none
 // ==/UserScript==
 

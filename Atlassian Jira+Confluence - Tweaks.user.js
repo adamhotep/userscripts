@@ -3,6 +3,7 @@
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
 // @description	UI tweaks for Atlassian Jira (tickets) and Confluence (wiki)
+// @icon	https://www.atlassian.com/favicon.ico
 // @include	https://jira.*
 // @include	https://jira-*
 // @include	https://confluence.*
@@ -18,7 +19,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20250126.0
+// @version	0.5.20250126.1
 // @grant	none
 // ==/UserScript==
 

@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name	Slashdot - Adblock
-// @version	0.3.20250105.0
+// @version	0.3.20250105.1
 // @grant	none
+// @icon	https://slashdot.org/favicon.ico
 // @include	https://slashdot.org/*
 // @include	https://*.slashdot.org/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
