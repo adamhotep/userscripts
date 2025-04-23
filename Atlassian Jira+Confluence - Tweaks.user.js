@@ -19,7 +19,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20250126.1
+// @version	0.5.20250305.0
 // @grant	none
 // ==/UserScript==
 
@@ -151,29 +151,32 @@ main(document);
 
 nf.debug("main is done");
 
-// Section anchors
-var heading = ':is(h1,h2,h3,h4,h5,h6)';
+// Section anchors (unless Confluence already provides this functionality)
+var heading = ':is(h1,h2,h3,h4,h5,h6):not(:has(.copy-heading-link-button))';
 var section = `${heading}:is([id], [name], + a[name]), a[name] + ${heading}`;
-nf.wait$(section, elem => {
-  if (elem.nodeName == "A") {	// deal with <h1>blah</h1><a name="this">
-    elem = elem.previousElementSibling;
-  }
-  if (! elem.innerText.match(/\S/) ) { return; }	// skip empty headings
+// The official Confluence implementation takes a bit to land, so wait first.
+nf.sleep(150, () => {
+  nf.wait$(section, elem => {
+    if (elem.nodeName == "A") {	// deal with <h1>blah</h1><a name="this">
+      elem = elem.previousElementSibling;
+    }
+    if (! elem.innerText.match(/\S/) ) { return; }	// skip empty headings
 
-  // remove frivolous trailing <br>
-  let trailing_br = /<br>[\r\n]{0,2}<\/span>$/;
-  if (elem.innerHTML.match(trailing_br)) {
-    elem.innerHTML = elem.innerHTML.replace(trailing_br, '</span>');
-  }
+    // remove frivolous trailing <br>
+    let trailing_br = /<br>[\r\n]{0,2}<\/span>$/;
+    if (elem.innerHTML.match(trailing_br)) {
+      elem.innerHTML = elem.innerHTML.replace(trailing_br, '</span>');
+    }
 
-  let self_link = document.createElement("a");
-  let target = elem.id || elem.name;
-  if (target == "comments-section-title") { target = "comments-section"; }
-  self_link.href = "#" + target;
-  self_link.classList.add("self-link");
-  elem.classList.add("heading");
-  elem.appendChild(self_link);
-  nf.debug("found section", elem, "\n", self_link);
+    let self_link = document.createElement("a");
+    let target = elem.id || elem.name;
+    if (target == "comments-section-title") { target = "comments-section"; }
+    self_link.href = "#" + target;
+    self_link.classList.add("self-link");
+    elem.classList.add("heading");
+    elem.appendChild(self_link);
+    nf.debug("found section", elem, "\n", self_link);
+  });
 });
 
 // for pop-ups: edit code blocks in fixed-width (the way it'll be displayed) {{{
