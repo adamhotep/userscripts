@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name	Slashdot - Usability tweaks
-// @version	1.2.20241208.1
+// @version	1.2.20250410.0
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // @icon	https://slashdot.org/favicon.ico
@@ -215,7 +215,7 @@ function onBioBox(box) {
               $html('b', { text:"Reddit: Latest from " }, 'a',
                 { href:reddit + r, text:r })));
             let a = elem.appendChild($html('a', { href:reddit + post[1] }));
-            a.append($html('div', { text:post[3], class:'reddit-title' }));
+            a.append($html('div', { text:title, class:'reddit-title' }));
             let img = elem.appendChild($html('img', { src:post[2] }));
             let img_popup = new nf.dialog('', { open:false, recenter:2 });
             img.addEventListener('click', event => {
@@ -225,7 +225,7 @@ function onBioBox(box) {
               img_popup.open();
             });
             img_popup.append($html('div', { class:'center sut_reddit' },
-              $html('a', { href:reddit + post[1], title:post[3] },
+              $html('a', { href:reddit + post[1], title:title },
                 img.cloneNode()
               )
             ));
