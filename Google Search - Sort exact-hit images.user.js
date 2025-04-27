@@ -4,7 +4,7 @@
 // @icon	data:image/svg+xml;utf8,<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg"><rect fill="none" height="192" width="192"/><g><circle fill="#34a853" cx="144.07" cy="144" r="16"/><circle fill="#4285f4" cx="96.07" cy="104" r="24"/><path fill="#ea4335" d="M24 135c0 18 15 33 33 33H96v-16H56c-9 0-16-8-16-18v-18H24v19z"/><path fill="#fbbc05" d="M168 73c0-18-15-33-33-33H116l20 16c9 0 16 8 16 18v30h16V73z"/><path fill="#4285f4" d="M112 24H80L68 40H57C39 40 24 55 24 73V92h16V74c0-10 7-18 16-18h80L112 24z"/></g></svg>
 // @match	https://www.google.com/search?*
 // @author	Adam Katz
-// @version	0.1.20250424.0
+// @version	0.1.20250426.0
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -23,8 +23,8 @@ nf.wait$('a:not([href])', a => {
       if (g) {
         let w = (g[1] + "" + g[2]) / 1;
         let h = (g[3] + "" + g[4]) / 1;
-        hit.setAttribute("width", w);
-        hit.setAttribute("height", h);
+        hit.setAttribute("width", nf.sprintf("%d.%07d", w, h));	// w then h
+        hit.setAttribute("height", nf.sprintf("%d.%07d", h, w)); // h then w
         hit.setAttribute("density", w * h);
         hit.setAttribute("unsorted", all.hits++);
       }
