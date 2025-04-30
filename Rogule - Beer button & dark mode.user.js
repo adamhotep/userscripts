@@ -2,7 +2,6 @@
 // @name	Rogule - Beer button & dark mode support
 // @description	The beer button rests ten turns; hit it 10x to gain 1 HP
 // @match	https://rogule.com/*
-// @match	https://*.nytimes.com/*/connections-companion-*
 // @icon	https://rogule.com/icon.png
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
