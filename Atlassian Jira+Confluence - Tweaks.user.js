@@ -19,7 +19,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20250305.0
+// @version	0.5.20250429.0
 // @grant	none
 // ==/UserScript==
 
@@ -63,7 +63,7 @@ function main(where=document) { try {
   }
 
 
-  nf.style$(`
+  nf.style$(`/* Userscript for Atlassian Jira+Confluence Tweaks */
 
     /* borders for inline monospace font elements */
     ${jira} tt:not(:empty), ${wiki} ${code} {
@@ -127,6 +127,11 @@ function main(where=document) { try {
     iframe#content_insert-char-dialog { height:calc(100% + 1ex); }
     table#charmap-picker { border-spacing:0; }
     #charmap-picker, #charmap-picker #charmap-view { padding:0; }
+
+    /* Dark Mode tweaks for Dark Reader */
+    html[data-darkreader-scheme="dark"] [data-darkreader-inline-color] {
+      --darkreader-text-c1c7d0:#868179!important; /* "light grey" was #c6c1b9 */
+    }
 
   `, where); // fix for wandering ` & syntax highlighting
 
