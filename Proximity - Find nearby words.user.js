@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name	Proximity - Find nearby words
-// @description	Adds a text box to search for nearby words
+// @description	Adds a text box to search for nearby words (a kind of hint)
 // @match	https://proximity.clevergoat.com/
 // @match	https://proximity.clevergoat.com/nearest/*
 // @icon	https://proximity.clevergoat.com/favicon.ico
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.1.20250519.0
+// @version	0.1.20250519.1
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -25,6 +25,8 @@ let search = ev => {
   let word = fix_near();
   if (!word) { return; }
   let path = '/nearest/' + btoa(word);
+  // Holding Ctrl ensures you open in a new tab (the game updates the same tab each time)
+  // Holding Shift ensures you open in the same tab
   if (exploring && !ev.ctrlKey || ev.shiftKey) { location.href = path; }
   else { window.open(location.origin + path, target).focus(); }
 }
@@ -66,7 +68,6 @@ if (location.pathname.startsWith('/nearest/')) {  // exploring nearby words
     if (reveal.textContent.includes("Reveal words")) reveal.click();
   });
 
-  let n=1;
   nf.wait$('.grid + .grid .col-span-2', word => {
     let text = word.textContent;
     if (text.match(/^[a-z]{2,}$/)) {
