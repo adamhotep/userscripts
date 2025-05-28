@@ -28,7 +28,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20250210.0
+// @version	1.4.20250523.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -198,7 +198,7 @@ if(q$('#question, .answer, pre')) {
 
 
   // Designate which code blocks need to grow and by how much
-  nf.wait$('div.post-text pre, div.s-prose pre', code_block => {
+  nf.wait$('div:is(.post-text,.s-prose):not(.js-editor) pre', code_block => {
     code_block.classList.add("code_block");
 
     let width = code_block.scrollWidth;
