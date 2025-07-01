@@ -6,7 +6,7 @@
 // @icon	https://proximity.clevergoat.com/favicon.ico
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.1.20250519.1
+// @version	0.1.20250609.0
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -87,10 +87,11 @@ if (location.pathname.startsWith('/nearest/')) {  // exploring nearby words
     near_button.id = 'near_button';
     near_button.textContent = "Nearby…";
     near_button.addEventListener('click', ev => {
-      near_box.classList.toggle('hidden');
-      nf.sleep(150, () => {
-        near.focus();
-      });
+      if (! near_box.classList.toggle('hidden')) {	// toggle. if open, then
+        let best_guess = q$('.w-full > .h-full + div p.text-xl')?.innerText;
+        if (best_guess) near.value = best_guess;
+        nf.sleep(150, () => { near.focus() });
+      }
     });
   });
 }
