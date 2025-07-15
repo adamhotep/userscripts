@@ -6,7 +6,7 @@
 // @icon	https://proximity.clevergoat.com/favicon.ico
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.1.20250609.0
+// @version	0.1.20250613.0
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -88,8 +88,16 @@ if (location.pathname.startsWith('/nearest/')) {  // exploring nearby words
     near_button.textContent = "Nearby…";
     near_button.addEventListener('click', ev => {
       if (! near_box.classList.toggle('hidden')) {	// toggle. if open, then
-        let best_guess = q$('.w-full > .h-full + div p.text-xl')?.innerText;
-        if (best_guess) near.value = best_guess;
+        let guesses = qa$('app-guesses .w-full .text-xl');
+        if (guesses.length >= 4) {
+          // the most recent guess is guesses[0] and its value is guesses[1]
+          // the previous best guess is guesses[2] and its value is guesses[3]
+          let away = elem => parseInt(elem).innerText;
+          if (away(guesses[3] < away(guesses[1]))) guesses[0] = guesses[2];
+        }
+        let best_guess = guesses[0]?.innerText;
+        // prune off the light bulb (from a hint) or magnifying glass (if any)
+        if (best_guess) near.value = best_guess.replace(/[^a-z]+$/, "");
         nf.sleep(150, () => { near.focus() });
       }
     });
