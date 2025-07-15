@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name	Slashdot - Adblock
-// @version	0.3.20250105.1
+// @version	0.3.20250808.0
 // @grant	none
 // @icon	https://slashdot.org/favicon.ico
 // @include	https://slashdot.org/*
@@ -20,12 +20,13 @@ nf.style$(`
 `);
 
 /* new as of Dec 2024:
- * these ads actually verify they're visible, so push them off screen */
+ * these ads actually verify they're rendered; push them off screen instead */
 nf.wait$(`#firehose-message-tray + span[id]:has(iframe),
   #slashboxes > :has(iframe),
   #slashboxes > :has(~ .block.nosort) /* (requires high karma) */,
   #bottomadspace ~ *,
-  a[target="_blank"]:has(img):not([href^="https://www.reddit.com/"])
+  a[target="_blank"]:has(img):not([href^="https://www.reddit.com/"]),
+  #firehoselist + span[id]:has(iframe)
 `, elem => {
   elem.style.position = 'absolute';
   elem.style.top = '-200vh';
