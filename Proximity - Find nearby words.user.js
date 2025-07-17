@@ -2,11 +2,12 @@
 // @name	Proximity - Find nearby words
 // @description	Adds a text box to search for nearby words (a kind of hint)
 // @match	https://proximity.clevergoat.com/
+// @match	https://proximity.clevergoat.com/archive/game*
 // @match	https://proximity.clevergoat.com/nearest/*
 // @icon	https://proximity.clevergoat.com/favicon.ico
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.1.20250613.0
+// @version	0.1.20250616.0
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -88,12 +89,20 @@ if (location.pathname.startsWith('/nearest/')) {  // exploring nearby words
     near_button.textContent = "Nearby…";
     near_button.addEventListener('click', ev => {
       if (! near_box.classList.toggle('hidden')) {	// toggle. if open, then
-        let guesses = qa$('app-guesses .w-full .text-xl');
+        let guesses = [...qa$('app-guesses .w-full .text-xl')];
         if (guesses.length >= 4) {
           // the most recent guess is guesses[0] and its value is guesses[1]
           // the previous best guess is guesses[2] and its value is guesses[3]
-          let away = elem => parseInt(elem).innerText;
-          if (away(guesses[3] < away(guesses[1]))) guesses[0] = guesses[2];
+          let away = elem => {
+            let txt = elem.innerText;
+            if      (txt.includes("warm"))	txt = 10e3;
+            else if (txt.includes("tepid"))	txt = 10e4;
+            else if (txt.includes("cold"))	txt = 10e5;
+            else if (txt.includes("far"))	txt = 10e6;
+            else				txt = parseInt(txt) || 10e7;
+            return txt;
+          }
+          if (away(guesses[3]) < away(guesses[1])) guesses.splice(0, 2);
         }
         let best_guess = guesses[0]?.innerText;
         // prune off the light bulb (from a hint) or magnifying glass (if any)
@@ -102,6 +111,27 @@ if (location.pathname.startsWith('/nearest/')) {  // exploring nearby words
       }
     });
   });
+
+  // Prevent the "Input cannot be empty" toast message from the Enter keypress
+  // (helps for sticky keyboards & accidental multi-taps on soft keyboards)
+  nf.wait$('#guessInput', input => {
+    let no_toast = nf.style$('');
+    input.addEventListener('keydown', ev => {
+      if (ev.key == 'Enter' && input.value == '') {
+        // these do not work for keydown, keyup, or keypress
+        ev.preventDefault();
+        ev.stopPropagation();
+        // fallback: do not display the toast, remove it, then allow new toasts
+        no_toast.textContent = /* syn=css */ 'mpl-toast { display:none }';
+        nf.sleep(200, () => {
+          let toast = q$('mpl-toast');
+          if (toast) toast.remove();
+          no_toast.textContent = '';
+        });
+      }
+    });
+  });
+
 }
 
 nf.style$(`
