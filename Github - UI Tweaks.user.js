@@ -9,7 +9,7 @@
 // @grant	GM.info
 // @grant	GM_info
 // @author	Adam Katz
-// @version	1.2.20250208.1
+// @version	2.0.20250808.0
 // ==/UserScript==
 
 /******************************************************************************\
@@ -49,8 +49,8 @@ const meta = what => {
 
 // Linkify commented web URLs
 // This ignores .pl-s (strings) because it may be **constructing** a URL
-var plc = document.querySelectorAll(".pl-c");
-for (var c = 0, cl = plc.length; c < cl; c++) {
+const plc = document.querySelectorAll(".pl-c");
+for (let c = 0, cl = plc.length; c < cl; c++) {
   plc[c].innerHTML = plc[c].innerHTML
     // avoids ampersands (escaped ampersands are okay) and trailing punctuation
     .replace(/\b(https?:\/\/(?:[^&<>"'\s]+(?:&amp;)*)+[^\s;?.!,<>()\[\]{}'"&*])/ig,
@@ -63,8 +63,9 @@ for (var c = 0, cl = plc.length; c < cl; c++) {
 // (by both value and value attribute) but the Github code actually populates
 // the clipboard from some convoluted JSON and I'm not touching that.
 
-var personal_clone = 'div:has(> #clone-with-ssh)';
-let opacity_style = nf.style$('');
+const personal_clone = 'div:has(> #clone-with-ssh)';
+const opacity_style = nf.style$('');
+const defhost = 'work.github.com';
 
 nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
   let clone2 = clone.cloneNode(1);
@@ -84,10 +85,16 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
   let login = q$('button[class][data-login]:not([data-login=""])');
   login &&= login.dataset.login;
   let user = '';
-  let host = 'git@work.github.com';
+  let host = defhost;
 
   update_althost = () => {
-    clone2_input.value = clone2_input.value.replace(/^[^:]+(?=:)/, host);
+    // this preserves the user (if any), essential for Github Organizations
+    clone2_input.value = clone2_input.value.replace(/^([^@]+@)?[^@]+(?=:)/,
+      (all, userat = "") => {
+        if (userat == "git@") userat = "";	// assumed in ~/.ssh/config
+        return userat + host
+      }
+    );
   }
   update_opacity = () => {
     let selector = (user != login) ? '#work-clone' : personal_clone;
@@ -154,7 +161,6 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
       setup.addEventListener('click', () => { dialog.open(); });
 
       let $code = text => $html('code', { text:text });
-      let defhost = 'git@work.github.com';
       // Input pattern is a string, interpreted as a full-string match.
       // Bare hyphens need escapes: https://stackoverflow.com/a/79359096/519360
       // "Username may only contain alphanumeric characters or single hyphens,
@@ -174,8 +180,6 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
         $html('p',
           $txt("Specify an alternate Github account and its corresponding "),
           $code("Host"),
-          $txt(" or "),
-          $code("user@host"),
           $txt(" value for easy account swapping. Use the "),
           $html('strong', { text:"SSH config" }),
           $txt(" tab to finish the setup.")
@@ -189,11 +193,11 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
         ),
         $html('label', { title:"The `user` is likely `git`, which you can "
           + "omit if you like; it will be added to the SSH config as needed." },
-          $html('div', $txt("Alternate SSH host or user@host")),
+          $html('div', $txt("Alternate SSH host")),
           new_host = $html('input', { type:'text', value:(host || defhost),
             pattern:host_re, placeholder:defhost,
-            'dataset.invalid':"Host or username@host (like an email)",
-            'dataset.invalid_re':'[^@\\w.-]+|(?<=@.*)@'
+            'dataset.invalid':"Just a host name!",
+            'dataset.invalid_re':'[^\\w.-]+'
           })
         ),
         only_match_label = $html('label',
@@ -240,7 +244,7 @@ nf.wait$(`div:not(:has(#work-clone)) > ${personal_clone}`, clone => {
       save.addEventListener('click', () => {
         user = new_user.value;
         if (new_host.value) {
-          if (new_host.value.match(/^(?:git@)?github.com$/) &&
+          if (new_host.value.match(/^github\.com$/) &&
             !confirm("You have set your alternate SSH host to the default. "
               + "Is that really what you want? It will disable this feature.")
           ) {
