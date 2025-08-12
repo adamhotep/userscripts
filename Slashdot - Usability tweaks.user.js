@@ -1,6 +1,9 @@
 // ==UserScript==
 // @name	Slashdot - Usability tweaks
-// @version	1.2.20250410.0
+// @description	Minor tweaks plus: render images for user space slashboxes
+// @namespace	https://github.com/adamhotep/userscripts
+// @author	Adam Katz
+// @version	1.2.20250810.0
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // @icon	https://slashdot.org/favicon.ico
@@ -192,7 +195,7 @@ function onBioBox(box) {
   qa$('.sut_reddit.empty[subreddit]').forEach(elem => {
     let r = elem.getAttribute('subreddit');
     let reddit = 'https://www.reddit.com';
-    GM.xmlHttpRequest({ method:'GET', url: `${reddit}/${r}`,
+    GM.xmlHttpRequest({ method:'GET', url: reddit + '/' + r,
       /*
       onabort: response => { console.warn("Abort:", response); },
       onerror: response => { console.warn("Error:", response); },
@@ -213,7 +216,7 @@ function onBioBox(box) {
             elem.classList.remove('empty');
             elem.append($html('p', {},
               $html('b', { text:"Reddit: Latest from " }, 'a',
-                { href:reddit + r, text:r })));
+                { href:reddit + '/' + r, text:r })));
             let a = elem.appendChild($html('a', { href:reddit + post[1] }));
             a.append($html('div', { text:title, class:'reddit-title' }));
             let img = elem.appendChild($html('img', { src:post[2] }));
