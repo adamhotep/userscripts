@@ -3,7 +3,7 @@
 // @description	Minor tweaks plus: render images for user space slashboxes
 // @namespace	https://github.com/adamhotep/userscripts
 // @author	Adam Katz
-// @version	1.2.20250810.0
+// @version	1.2.20250829.0
 // @grant	GM_xmlhttpRequest
 // @grant	GM.xmlHttpRequest
 // @icon	https://slashdot.org/favicon.ico
@@ -57,6 +57,8 @@ var style = nf.style$(`
   body[data-sdut-pop="4"] .sdutPop7, body[data-sdut-pop="5"] .sdutPop6,
   body[data-sdut-pop="5"] .sdutPop7, body[data-sdut-pop="6"] .sdutPop7
   { display:none!important; }
+
+  html[data-darkreader-scheme="dark"] { --darkreader-text-002f2f: #cff; }
 
 `);
 // end tweaking the CSS `}}}
