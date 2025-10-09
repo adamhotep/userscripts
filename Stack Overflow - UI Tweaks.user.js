@@ -28,7 +28,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.4.20250523.0
+// @version	1.5.20251008.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -266,6 +266,46 @@ if (add_question_css) {
   `);
 }
 // Done collapsing flagged questions }}}
+
+// Better dates & links on comments to answers (so far only on SO itself) {{{
+const ticker = (time, update) => {
+  try {
+    let now = new Date();
+    let msg = time.title;
+    let freq = null;
+    let d = new Date(msg);
+    let ago = (now - d) / 6e4;		// commented this many minutes ago
+    if (ago < 59.5) {			// rounds to less than an hour ago
+      msg = parseInt(ago) + " minutes ago";
+      freq = 60e4;	// 1min
+    } else if (ago < 1410) {		// rounds to less than a day ago
+      msg = parseInt(ago / 60) + " hours ago";
+      freq = 36e5;	// 1h
+    } else {
+      // TODO: make this configurable? add a toggle?
+      // (the SO default is `Mmm DD at HH:MM` at least for en_US)
+      msg = nf.sprintf("%04d-%02d-%02d %02d:%02d", d.getFullYear(), d.getDate(),
+        d.getMonth()+1, d.getHours(), d.getMinutes());
+    }
+    time.textContent = msg;
+    if (freq) setTimeout(ticker, freq, time, 1);  // update via recursive call
+  } catch(e) {
+    nf.debug(e, "\ninvalid time:", time.title);
+  }
+  if (!update) {
+    // shorten the comment link (but not the new "copy link" menu item)
+    // TODO: use the value from time.closest('id') since it's shorter?
+    //       I don't know how permanent that is.
+    let share = q$('#question a.js-share-link');
+    if (share) {
+      let a = time.parentElement;
+      a.href = share.href + a.href.replace(/^[^?#]+/, '');
+    }
+  }
+}
+nf.wait$(`a > time[title^="20"][title$="Z"]`, ticker);
+// Done with better dates & links }}}
+
 
 // adblock {{{
 var sponsored = qa$(`div.site-header--sponsored`);
