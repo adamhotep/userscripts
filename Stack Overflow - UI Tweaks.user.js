@@ -283,9 +283,12 @@ const ticker = (time, update) => {
       freq = 36e5;	// 1h
     } else {
       // TODO: make this configurable? add a toggle?
-      // (the SO default is `Mmm DD at HH:MM` at least for en_US)
-      msg = nf.sprintf("%04d-%02d-%02d %02d:%02d", d.getFullYear(), d.getDate(),
-        d.getMonth()+1, d.getHours(), d.getMinutes());
+      // (the SO default is `Mmm DD at HH:MM` in UTC, at least for en_US)
+      msg = nf.sprintf("%04d-%02d-%02d %02d:%02d %s", d.getFullYear(),
+        d.getDate(), d.getMonth()+1, d.getHours(), d.getMinutes(),
+        new Intl.DateTimeFormat(navigator.language, { timeZoneName:'short'})
+          .formatToParts(d).find(p => p.type === 'timeZoneName').value
+      );
     }
     time.textContent = msg;
     if (freq) setTimeout(ticker, freq, time, 1);  // update via recursive call
