@@ -6,7 +6,7 @@
 // @icon	https://www.nytimes.com/games-assets/v2/assets/connections/NYT-Connections-Icon.svg
 // @author	Adam Katz
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.1.20250424.0
+// @version	0.1.20251031.0
 // @grant	none
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
 // ==/UserScript==
@@ -22,7 +22,10 @@ let style = nf.style$(`
   @media ( prefers-color-scheme: dark ) {
 
     /* Invert the whole document, correct colors, undo (double-invert) images */
-    html, img { filter: invert() hue-rotate(180deg); }
+    html, img, label[for^="inner-card-"]:has(img) {
+      filter: invert() hue-rotate(180deg);
+    }
+    label[for^="inner-card-"] img { filter:none; }
     dt [data-level] {
       filter:invert() hue-rotate(180deg) brightness(1.7) saturate(.8);
     }
