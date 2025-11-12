@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name	Webex Chat - Usabilty tweaks
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.4.20251111.0
+// @version	0.4.20251112.0
 // @author	Adam Katz
 // @icon	https://web.webex.com/favicon.ico
 // @match	https://web.webex.com/*
@@ -46,6 +46,7 @@ mdc-button[title="Wrap"]:hover {
 }
 /* This makes no sense, but it gets the smallest height for me */
 .activity-item pre > code > * { line-height:2!important; }
+.shareList .activity-item--adaptive-card { white-space:wrap; max-width:33vw; }
 
 /* Markdown tables */
 .wcut			{ border-spacing:0; margin:1em 0 1em .5ex;
