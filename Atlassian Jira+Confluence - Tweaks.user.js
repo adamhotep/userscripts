@@ -19,7 +19,7 @@
 // @match	https://*/*/conf/display/*/*
 // @match	https://*/*/conf/pages/viewpage.action?*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	0.5.20250429.0
+// @version	0.5.20251204.0
 // @grant	none
 // ==/UserScript==
 
@@ -28,6 +28,7 @@
        * border around inline fixed-width text
        * edit code blocks in fixed width
      * Spell-check comment fields
+     * Restricted-access comments in Jira now have a subtle red background
      * Make clickable anchors for Confluence page sections for easy sharing
      * Add an "expand/collapse all" button for collapsed Confluence content
      * Clone Jira tickets' comment-sorting button to be visible from the bottom
@@ -38,6 +39,7 @@
      * Auto-collapse *jira-integration comments
      * Remove unnecessary junk in links to comments
      * Fixed some syntax highlighting bugs
+     * Minor dark mode tweaks
      * Probably more stuff that hasn't made it to this list
 */
 
@@ -128,9 +130,20 @@ function main(where=document) { try {
     table#charmap-picker { border-spacing:0; }
     #charmap-picker, #charmap-picker #charmap-view { padding:0; }
 
-    /* Dark Mode tweaks for Dark Reader */
+    /* Subtle red background for restricted comments (and their code blocks) */
+    .issue-data-block:has(.action-head .redText) {
+      background-color:#f221; --ds-surface:light-dark(#fff8, #1D212588);
+    }
+
+    /* Dark Mode tweaks for Dark Reader (not used w/ Atlassian's dark themes) */
     html[data-darkreader-scheme="dark"] [data-darkreader-inline-color] {
       --darkreader-text-c1c7d0:#868179!important; /* "light grey" was #c6c1b9 */
+    }
+
+    @media ( prefers-color-scheme: dark ) {
+      img[src="https://github.com/favicon.ico"] {
+        filter:invert() hue-rotate(180deg);
+      }
     }
 
   `, where); // fix for wandering ` & syntax highlighting
