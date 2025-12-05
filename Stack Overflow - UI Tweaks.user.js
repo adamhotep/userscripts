@@ -28,7 +28,7 @@
 // @match	http://meta.answers.onstartups.com/*
 // @match	http://mathoverflow.net/*
 // @require	https://github.com/adamhotep/nofus.js/raw/main/nofus.js
-// @version	1.5.20251008.0
+// @version	1.5.20251130.0
 // @author	Adam Katz
 // @grant	none
 // ==/UserScript==
@@ -272,12 +272,12 @@ const ticker = (time, update) => {
   try {
     let now = new Date();
     let msg = time.title;
-    let freq = null;
+    let freq = 0;
     let d = new Date(msg);
     let ago = (now - d) / 6e4;		// commented this many minutes ago
     if (ago < 59.5) {			// rounds to less than an hour ago
       msg = parseInt(ago) + " minutes ago";
-      freq = 60e4;	// 1min
+      freq = 6e4;	// 1min
     } else if (ago < 1410) {		// rounds to less than a day ago
       msg = parseInt(ago / 60) + " hours ago";
       freq = 36e5;	// 1h
@@ -285,7 +285,7 @@ const ticker = (time, update) => {
       // TODO: make this configurable? add a toggle?
       // (the SO default is `Mmm DD at HH:MM` in UTC, at least for en_US)
       msg = nf.sprintf("%04d-%02d-%02d %02d:%02d %s", d.getFullYear(),
-        d.getDate(), d.getMonth()+1, d.getHours(), d.getMinutes(),
+        d.getMonth()+1, d.getDate(), d.getHours(), d.getMinutes(),
         new Intl.DateTimeFormat(navigator.language, { timeZoneName:'short'})
           .formatToParts(d).find(p => p.type === 'timeZoneName').value
       );
