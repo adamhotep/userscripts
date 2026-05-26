@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name	Webex Chat - Usabilty tweaks
 // @namespace	https://github.com/adamhotep/userscripts
-// @version	0.4.20251112.0
+// @version	0.4.20260428.0
 // @author	Adam Katz
 // @icon	https://web.webex.com/favicon.ico
 // @match	https://web.webex.com/*
@@ -71,7 +71,7 @@ nf.wait$('mdc-dialog[header-text="Network issues detected"]', dialog => {
 // It is possible that Webex gets confused by this and refuses to render the
 // altered contents. If this happens, view another chat and then come back.
 // Markdown table spec: https://github.github.com/gfm/#table
-nf.wait$('.activity-item-message', msg => {
+nf.wait$('DISABLED .activity-item-message', msg => {
   const p = '< (?: /? p | br ) \\b [^>]* >';
   const pipe = '(?<! \\\\ ) (?: \\\\ \\\\ )* \\|';
   const end_pipe = `${pipe} [\x20\\t]* (?: ${p} | \\r? \\n | $ )`;
