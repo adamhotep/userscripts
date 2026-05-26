@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name	Slashdot - Adblock
-// @version	0.3.20250808.0
+// @version	0.4.20260413.0
 // @grant	none
 // @icon	https://slashdot.org/favicon.ico
 // @include	https://slashdot.org/*
@@ -17,6 +17,10 @@ nf.style$(`
   #slashdot_deals, .adwrap
   { display:none!important; }
 
+  /* I had to turn off Adblock Plus, now there's more to squash */
+  footer#ft, #sitewide-top-banner-placeholder
+  { display:none!important; }
+
 `);
 
 /* new as of Dec 2024:
@@ -26,11 +30,16 @@ nf.wait$(`#firehose-message-tray + span[id]:has(iframe),
   #slashboxes > :has(~ .block.nosort) /* (requires high karma) */,
   #bottomadspace ~ *,
   a[target="_blank"]:has(img):not([href^="https://www.reddit.com/"]),
-  #firehoselist + span[id]:has(iframe)
+  #firehoselist + span[id]:has(iframe),
+  div[style*="top:"],
+  [id*="adblocked"],
+  div:has(+a[name="main-articles"])
 `, elem => {
   elem.style.position = 'absolute';
   elem.style.top = '-200vh';
 });
+
+nf.wait$(`.sticky`, elem => { elem.remove(); });
 
 /* older */
 nf.wait$('article[id] > header > div.ntv-sponsored-disclaimer',
