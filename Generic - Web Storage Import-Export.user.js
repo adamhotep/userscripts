@@ -10,7 +10,7 @@
 // @grant	GM.info
 // @grant	GM.setClipboard
 // @author	Adam Katz
-// @version	0.1.20260525.1
+// @version	0.1.20260525.2
 // @license	GPL
 // ==/UserScript==
 
@@ -171,11 +171,18 @@ const make_menu = () => {
   // TODO? File-based import and export
   let write = $button("Write", ev => {
     try {
-      let data = JSON.parse(textbox.value);
-      localStorage.clear();
-      Object.keys(data).forEach(key => { localStorage.setItem(key, data[key]) });
+      if (textbox.value.match(/^[\s{}]*$/)) {	// non-empty
+        let data = JSON.parse(textbox.value);
+        localStorage.clear();	// don't move above, we need to vet JSON first
+        Object.keys(data).forEach(key => {
+          localStorage.setItem(key, data[key]);
+        });
+        ev.target.textContent = "💾 Written";
+      } else {
+        localStorage.clear();
+        ev.target.textContent = "💾 Cleared";
+      }
       flash(textbox);
-      ev.target.textContent = "💾 Written";
       nf.sleep(1500, () => { ev.target.textContent = "Write" });
     } catch (error) {
       alert("Invalid or improperly escaped JSON data, not saving");
