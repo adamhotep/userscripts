@@ -10,7 +10,7 @@
 // @grant	GM.info
 // @grant	GM.setClipboard
 // @author	Adam Katz
-// @version	0.1.20260525.2
+// @version	0.1.20260525.3
 // @license	GPL
 // ==/UserScript==
 
@@ -171,16 +171,16 @@ const make_menu = () => {
   // TODO? File-based import and export
   let write = $button("Write", ev => {
     try {
-      if (textbox.value.match(/^[\s{}]*$/)) {	// non-empty
+      if (textbox.value.match(/^[\s{}]*$/)) {	// empty
+        localStorage.clear();
+        ev.target.textContent = "💾 Cleared";
+      } else {
         let data = JSON.parse(textbox.value);
         localStorage.clear();	// don't move above, we need to vet JSON first
         Object.keys(data).forEach(key => {
           localStorage.setItem(key, data[key]);
         });
         ev.target.textContent = "💾 Written";
-      } else {
-        localStorage.clear();
-        ev.target.textContent = "💾 Cleared";
       }
       flash(textbox);
       nf.sleep(1500, () => { ev.target.textContent = "Write" });
