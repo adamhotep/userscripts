@@ -10,7 +10,7 @@
 // @grant	GM.info
 // @grant	GM.setClipboard
 // @author	Adam Katz
-// @version	0.1.20260525.0
+// @version	0.1.20260525.1
 // @license	GPL
 // ==/UserScript==
 
@@ -171,7 +171,7 @@ const make_menu = () => {
   // TODO? File-based import and export
   let write = $button("Write", ev => {
     try {
-      let data = JSON.parse(ev.target.value);
+      let data = JSON.parse(textbox.value);
       localStorage.clear();
       Object.keys(data).forEach(key => { localStorage.setItem(key, data[key]) });
       flash(textbox);
